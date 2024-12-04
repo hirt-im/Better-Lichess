@@ -7,6 +7,8 @@ const updateArrowColor = (color) => {
     const arrowHeads = document.querySelectorAll('marker path');
     const circles = document.querySelectorAll('g circle');
     const dots = document.querySelectorAll('square.move-dest');
+    const selectedSquare = document.querySelectorAll('square.selected');
+
 
     
     arrows.forEach(arrow => {
@@ -30,6 +32,11 @@ const updateArrowColor = (color) => {
     dots.forEach(dot => {
         console.log("Modifying circle:", dot);
         dot.style.background = gradient;
+    });
+
+    selectedSquare.forEach(square => {
+        console.log("Modifying circle:", square);
+        square.style.backgroundColor = rgbaColor;
     });
 };
 

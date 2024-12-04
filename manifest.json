@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Lichess Arrow Editor",
+    "name": "Custom Lichess Arrows",
     "version": "1.0",
-    "description": "Customize the arrows in Lichess.",
+    "description": "Customize the color of the drawable arrows in Lichess.",
     "permissions": ["scripting", "storage"],
     "host_permissions": ["https://lichess.org/*"],
     "action": {

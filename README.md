@@ -21,3 +21,5 @@ A simple Chrome extension to change the color of the drawable arrows in Lichess.
 3. Use the color picker to choose your desired color.
 
 4. Click **Save** to apply your changes.
+
+![image](https://github.com/user-attachments/assets/7e4cd6f1-d5a8-4a07-aada-629a3bb56797)

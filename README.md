@@ -4,7 +4,7 @@ A simple Chrome extension to change the color of the drawable arrows in Lichess.
 ## Installation
 1. Download the repository as a ZIP file and extract it.
 
-2. Go to chrome://extensions/.
+2. Go to chrome://extensions/
 
 3. Enable Developer mode.
 

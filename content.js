@@ -6,6 +6,7 @@ const updateArrowColor = (color) => {
     const circles = document.querySelectorAll('g circle');
     const dots = document.querySelectorAll('square.move-dest');
     const selectedSquare = document.querySelectorAll('square.selected');
+    const premoveDots = document.querySelectorAll('.premove-dest');
     
     arrows.forEach(arrow => {
         console.log("Modifying arrow:", arrow);
@@ -28,6 +29,11 @@ const updateArrowColor = (color) => {
     dots.forEach(dot => {
         console.log("Modifying circle:", dot);
         dot.style.background = gradient;
+    });
+
+    premoveDots.forEach(premoveDot => {
+        console.log("Modifying circle:", premoveDot);
+        premoveDot.style.background = gradient;
     });
 
     selectedSquare.forEach(square => {

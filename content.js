@@ -1,15 +1,11 @@
-// Function to update arrow styles
 const updateArrowColor = (color) => {
     console.log("Updating arrow color to:", color);
 
-    // Select all <line> elements inside <g> elements with cgHash attributes
     const arrows = document.querySelectorAll('g line');
     const arrowHeads = document.querySelectorAll('marker path');
     const circles = document.querySelectorAll('g circle');
     const dots = document.querySelectorAll('square.move-dest');
     const selectedSquare = document.querySelectorAll('square.selected');
-
-
     
     arrows.forEach(arrow => {
         console.log("Modifying arrow:", arrow);
@@ -40,22 +36,22 @@ const updateArrowColor = (color) => {
     });
 };
 
-// Initialize arrow color and set up MutationObserver
+
 const initializeArrowColor = () => {
-    let currentColor = "red"; // Fallback default color
+    let currentColor = "red"; 
 
     // Load the saved color from storage
     chrome.storage.sync.get("arrowColor", (data) => {
-        currentColor = data.arrowColor || "red"; // Use saved color or default to red
+        currentColor = data.arrowColor || "red"; 
         console.log("Initial arrow color:", currentColor);
-        updateArrowColor(currentColor); // Apply the initial color
+        updateArrowColor(currentColor); 
 
         // Observe for dynamically added arrows
         const observer = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
                 if (mutation.addedNodes.length) {
                     console.log("New nodes added, updating arrows with color:", currentColor);
-                    updateArrowColor(currentColor); // Use the latest color
+                    updateArrowColor(currentColor); 
                 }
             });
         });
@@ -66,9 +62,9 @@ const initializeArrowColor = () => {
     // Listen for changes in color storage and update the observer's color
     chrome.storage.onChanged.addListener((changes) => {
         if (changes.arrowColor) {
-            currentColor = changes.arrowColor.newValue; // Update to the latest color
+            currentColor = changes.arrowColor.newValue; 
             console.log("Arrow color changed to:", currentColor);
-            updateArrowColor(currentColor); // Update all existing arrows immediately
+            updateArrowColor(currentColor); 
         }
     });
 };
@@ -81,5 +77,5 @@ function hexToRgba(hex, alpha = 1) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// Run the initialization
+
 initializeArrowColor();

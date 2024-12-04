@@ -6,6 +6,8 @@ const updateArrowColor = (color) => {
     const arrows = document.querySelectorAll('g line');
     const arrowHeads = document.querySelectorAll('marker path');
     const circles = document.querySelectorAll('g circle');
+    const dots = document.querySelectorAll('square.move-dest');
+
     
     arrows.forEach(arrow => {
         console.log("Modifying arrow:", arrow);
@@ -21,6 +23,13 @@ const updateArrowColor = (color) => {
     circles.forEach(circle => {
         console.log("Modifying circle:", circle);
         circle.setAttribute('stroke', color);
+    });
+
+    const rgbaColor = hexToRgba(color, 0.5); 
+    const gradient = `radial-gradient(${rgbaColor} 19%, rgba(0, 0, 0, 0) 20%)`;
+    dots.forEach(dot => {
+        console.log("Modifying circle:", dot);
+        dot.style.background = gradient;
     });
 };
 
@@ -56,6 +65,14 @@ const initializeArrowColor = () => {
         }
     });
 };
+
+
+function hexToRgba(hex, alpha = 1) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 // Run the initialization
 initializeArrowColor();

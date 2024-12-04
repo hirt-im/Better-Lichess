@@ -6,6 +6,7 @@ const updateArrowColor = (color) => {
     // Select all <line> elements inside <g> elements with cgHash attributes
     const arrows = document.querySelectorAll('g line');
     const arrowHeads = document.querySelectorAll('marker path');
+    const circles = document.querySelectorAll('g circle');
     
     arrows.forEach(arrow => {
       console.log("Modifying arrow:", arrow); // Log the arrow element
@@ -15,10 +16,16 @@ const updateArrowColor = (color) => {
 
     arrowHeads.forEach(arrowHead => {
         console.log("Modifying arrow:", arrowHead); // Log the arrow element
-        // arrowHead.setAttribute('stroke', color); // Update the stroke color attribute
         arrowHead.setAttribute('fill', color); // Update the stroke color attribute
       });
+
+    circles.forEach(circle => {
+        console.log("Modifying arrow:", circle); // Log the arrow element
+        circle.setAttribute('stroke', color); // Update the stroke color attribute
+    });
   };
+
+  
   
   // Function to initialize arrow color application
   const initializeArrowColor = () => {

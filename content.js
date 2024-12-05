@@ -1,8 +1,4 @@
-let isDragging = false; // Track if the user is dragging
 let dragStartSquare = null; // Track the square where the drag started
-let startX = 0; // Track the X position where the right-click started
-let startY = 0; // Track the Y position where the right-click started
-const dragThreshold = 50; // Minimum movement (in pixels) to consider it a drag
 
 const enableSquareHighlighting = () => {
     document.addEventListener("mousedown", (event) => {
@@ -10,38 +6,21 @@ const enableSquareHighlighting = () => {
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
 
         if (event.button === 2) { // Right mouse button
-            isDragging = false; // Reset dragging state
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
-            startX = event.clientX; // Record the starting X position
-            startY = event.clientY; // Record the starting Y position
-        }
-    });
-
-    document.addEventListener("mousemove", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
-
-        if (event.buttons === 2) { // Right mouse button is pressed
-            const deltaX = Math.abs(event.clientX - startX); // Calculate X movement
-            const deltaY = Math.abs(event.clientY - startY); // Calculate Y movement
-
-            if (deltaX > dragThreshold || deltaY > dragThreshold) {
-                isDragging = true; // User is dragging if movement exceeds the threshold
-            }
         }
     });
 
     document.addEventListener("mouseup", (event) => {
-        isDragging = false;
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
 
         if (event.button === 2) { // Right mouse button
-            if (!isDragging) {
-                // If not dragging, highlight the square
-                toggleSquareHighlight(event);
+            const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
+            if (dragStartSquare && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)) {
+                // Do not highlight if the drag ended on a different square
+                return;
             }
-            isDragging = false; // Reset dragging state
+            toggleSquareHighlight(event); // Highlight the square if it's the same as the starting square
         }
     });
 
@@ -52,6 +31,10 @@ const enableSquareHighlighting = () => {
 
         // Remove all highlight overlays
         board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
+    });
+
+    document.addEventListener("contextmenu", (event) => {
+        event.preventDefault(); // Prevent the default right-click menu
     });
 };
 

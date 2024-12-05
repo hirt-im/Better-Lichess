@@ -1,87 +1,54 @@
-const updateArrowColor = (color) => {
-    console.log("Updating arrow color to:", color);
+const injectDynamicCSS = (color) => {
+    const existingStyle = document.getElementById("dynamicArrowStyles");
+    if (existingStyle) existingStyle.remove();
 
-    const arrows = document.querySelectorAll('g line');
-    const arrowHeads = document.querySelectorAll('marker path');
-    const circles = document.querySelectorAll('g circle');
-    const dots = document.querySelectorAll('square.move-dest');
-    const selectedSquare = document.querySelectorAll('square.selected');
-    const premoveDots = document.querySelectorAll('.premove-dest');
-    
-    arrows.forEach(arrow => {
-        console.log("Modifying arrow:", arrow);
-        arrow.setAttribute('stroke', color);
-        arrow.setAttribute('fill', color);
-    });
-
-    arrowHeads.forEach(arrowHead => {
-        console.log("Modifying arrow head:", arrowHead);
-        arrowHead.setAttribute('fill', color);
-    });
-
-    circles.forEach(circle => {
-        console.log("Modifying circle:", circle);
-        circle.setAttribute('stroke', color);
-    });
-
-    const rgbaColor = hexToRgba(color, 0.5); 
-    const gradient = `radial-gradient(${rgbaColor} 19%, rgba(0, 0, 0, 0) 20%)`;
-    dots.forEach(dot => {
-        console.log("Modifying circle:", dot);
-        dot.style.background = gradient;
-    });
-
-    premoveDots.forEach(premoveDot => {
-        console.log("Modifying circle:", premoveDot);
-        premoveDot.style.background = gradient;
-    });
-
-    selectedSquare.forEach(square => {
-        console.log("Modifying circle:", square);
-        square.style.backgroundColor = rgbaColor;
-    });
-};
-
-
-const initializeArrowColor = () => {
-    let currentColor = "red"; 
-
-    // Load the saved color from storage
-    chrome.storage.sync.get("arrowColor", (data) => {
-        currentColor = data.arrowColor || "red"; 
-        console.log("Initial arrow color:", currentColor);
-        updateArrowColor(currentColor); 
-
-        // Observe for dynamically added arrows
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach(mutation => {
-                if (mutation.addedNodes.length) {
-                    console.log("New nodes added, updating arrows with color:", currentColor);
-                    updateArrowColor(currentColor); 
-                }
-            });
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-    });
-
-    // Listen for changes in color storage and update the observer's color
-    chrome.storage.onChanged.addListener((changes) => {
-        if (changes.arrowColor) {
-            currentColor = changes.arrowColor.newValue; 
-            console.log("Arrow color changed to:", currentColor);
-            updateArrowColor(currentColor); 
+    const css = `
+        g line {
+            stroke: ${color} !important;
+            fill: ${color} !important;
         }
-    });
+        marker path {
+            fill: ${color} !important;
+        }
+        g circle {
+            stroke: ${color} !important;
+        }
+        square.move-dest {
+            background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
+        }
+        square.selected {
+            background-color: ${hexToRgba(color, 0.5)} !important;
+        }
+        square.premove-dest {
+            background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
+        }
+    `;
+
+    const style = document.createElement("style");
+    style.id = "dynamicArrowStyles";
+    style.textContent = css;
+
+    document.head.appendChild(style);
 };
 
-
-function hexToRgba(hex, alpha = 1) {
+// Convert hex to rgba
+const hexToRgba = (hex, alpha = 1) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+};
 
+// Retrieve the saved color from storage and inject the CSS
+chrome.storage.sync.get("arrowColor", (data) => {
+    const savedColor = data.arrowColor || "#ff0000"; // Default to red
+    injectDynamicCSS(savedColor);
+});
 
-initializeArrowColor();
+// Listen for changes to the color and update the CSS dynamically
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.arrowColor) {
+        const newColor = changes.arrowColor.newValue;
+        injectDynamicCSS(newColor);
+    }
+});

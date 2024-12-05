@@ -2,14 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arrow Color Picker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Arrow Settings</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <h3>Choose Arrow Color</h3>
-  <input type="color" id="arrowColor" />
-  <button id="saveColor">Save</button>
+  <h3>Choose Arrow Color and Opacity</h3>
+  <div>
+    <label for="arrowColor">Color:</label>
+    <input type="color" id="arrowColor" />
+  </div>
+  <div>
+    <label for="arrowOpacity">Opacity (0.0 to 1.0):</label>
+    <input type="range" id="arrowOpacity" min="0" max="1" step="0.01" />
+    <span id="opacityValue"></span>
+  </div>
+  <button id="saveSettings">Save</button>
   <script src="popup.js"></script>
 </body>
 </html>

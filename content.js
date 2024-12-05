@@ -107,23 +107,33 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Retrieve the saved color from storage and inject the CSS
-chrome.storage.sync.get("arrowColor", (data) => {
+chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
     const savedColor = data.arrowColor || "#f2c218";
-    injectDynamicCSS(savedColor);
+    const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : 1.0;
+
+    injectDynamicCSS(savedColor, savedOpacity);
     enableSquareHighlighting(); // Enable right-click highlighting for squares
 });
 
-// Listen for changes to the color and update the CSS dynamically
+
 chrome.storage.onChanged.addListener((changes) => {
+    let newColor, newOpacity;
     if (changes.arrowColor) {
-        const newColor = changes.arrowColor.newValue;
-        injectDynamicCSS(newColor);
+        newColor = changes.arrowColor.newValue;
     }
+    if (changes.arrowOpacity) {
+        newOpacity = changes.arrowOpacity.newValue;
+    }
+
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
+        const updatedColor = newColor || data.arrowColor || "#f2c218";
+        const updatedOpacity = (newOpacity !== undefined) ? newOpacity : (data.arrowOpacity !== undefined ? data.arrowOpacity : 1.0);
+        injectDynamicCSS(updatedColor, updatedOpacity);
+    });
 });
 
 // Inject dynamic CSS
-const injectDynamicCSS = (color) => {
+const injectDynamicCSS = (color, opacity) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
 
@@ -157,7 +167,7 @@ const injectDynamicCSS = (color) => {
             z-index: 1;
         }
         cg-container .cg-shapes {
-            opacity: 1 !important;
+            opacity: ${opacity} !important;
         }
     `;
 
@@ -167,3 +177,4 @@ const injectDynamicCSS = (color) => {
 
     document.head.appendChild(style);
 };
+

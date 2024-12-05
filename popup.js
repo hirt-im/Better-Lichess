@@ -2,7 +2,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Retrieve the saved color from chrome.storage.sync
     chrome.storage.sync.get("arrowColor", (data) => {
-        const savedColor = data.arrowColor || "#ff0000"; // Default to red if no color is saved
+        const savedColor = data.arrowColor || "#f2c218"; // Default to red if no color is saved
         // Set the color input's value to the saved color
         document.getElementById("arrowColor").value = savedColor;
     });

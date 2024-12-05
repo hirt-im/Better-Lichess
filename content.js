@@ -84,6 +84,16 @@ const enableSquareHighlighting = () => {
             board.appendChild(highlight);
         }
     });
+
+    // Add a left-click event listener to clear all highlights
+    document.addEventListener("click", (event) => {
+        // Get the chessboard
+        const board = document.querySelector("cg-board");
+        if (!board) return;
+
+        // Remove all highlight overlays
+        board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
+    });
 };
 
 // Convert hex to rgba

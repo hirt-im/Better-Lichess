@@ -6,6 +6,9 @@ const dragThreshold = 50; // Minimum movement (in pixels) to consider it a drag
 
 const enableSquareHighlighting = () => {
     document.addEventListener("mousedown", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+
         if (event.button === 2) { // Right mouse button
             isDragging = false; // Reset dragging state
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
@@ -15,6 +18,9 @@ const enableSquareHighlighting = () => {
     });
 
     document.addEventListener("mousemove", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+
         if (event.buttons === 2) { // Right mouse button is pressed
             const deltaX = Math.abs(event.clientX - startX); // Calculate X movement
             const deltaY = Math.abs(event.clientY - startY); // Calculate Y movement
@@ -26,6 +32,9 @@ const enableSquareHighlighting = () => {
     });
 
     document.addEventListener("mouseup", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+
         if (event.button === 2) { // Right mouse button
             if (!isDragging) {
                 // If not dragging, highlight the square
@@ -36,10 +45,9 @@ const enableSquareHighlighting = () => {
     });
 
     // Add a left-click event listener to clear all highlights
-    document.addEventListener("click", () => {
-        // Get the chessboard
+    document.addEventListener("click", (event) => {
         const board = document.querySelector("cg-board");
-        if (!board) return;
+        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
 
         // Remove all highlight overlays
         board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
@@ -47,21 +55,17 @@ const enableSquareHighlighting = () => {
 };
 
 const toggleSquareHighlight = (event) => {
-    // Get the chessboard
     const board = document.querySelector("cg-board");
     if (!board) return;
 
-    // Calculate the clicked position
     const rect = board.getBoundingClientRect();
     const x = event.clientX - rect.left; // X position relative to the board
     const y = event.clientY - rect.top;  // Y position relative to the board
 
-    // Calculate the square size and the row/column
     const squareSize = rect.width / 8; // Assuming an 8x8 grid
     const col = Math.floor(x / squareSize);
     const row = Math.floor(y / squareSize);
 
-    // Translate these into `transform` values
     const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
 
     const highlightClass = "highlight-overlay";

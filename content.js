@@ -156,6 +156,9 @@ const injectDynamicCSS = (color) => {
             position: absolute;
             z-index: 1;
         }
+        cg-container .cg-shapes {
+            opacity: 1 !important;
+        }
     `;
 
     const style = document.createElement("style");

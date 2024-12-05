@@ -1,30 +1,37 @@
 let isDragging = false; // Track if the user is dragging
 let dragStartSquare = null; // Track the square where the drag started
+let startX = 0; // Track the X position where the right-click started
+let startY = 0; // Track the Y position where the right-click started
+const dragThreshold = 5; // Minimum movement (in pixels) to consider it a drag
 
 const enableSquareHighlighting = () => {
     document.addEventListener("mousedown", (event) => {
         if (event.button === 2) { // Right mouse button
             isDragging = false; // Reset dragging state
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
+            startX = event.clientX; // Record the starting X position
+            startY = event.clientY; // Record the starting Y position
         }
     });
 
     document.addEventListener("mousemove", (event) => {
         if (event.buttons === 2) { // Right mouse button is pressed
-            isDragging = true; // User is dragging
+            const deltaX = Math.abs(event.clientX - startX); // Calculate X movement
+            const deltaY = Math.abs(event.clientY - startY); // Calculate Y movement
+
+            if (deltaX > dragThreshold || deltaY > dragThreshold) {
+                isDragging = true; // User is dragging if movement exceeds the threshold
+            }
         }
     });
 
     document.addEventListener("mouseup", (event) => {
         if (event.button === 2) { // Right mouse button
-            if (isDragging) {
-                // If the user was dragging, reset the state and do nothing else
-                isDragging = false;
-                return;
+            if (!isDragging) {
+                // If not dragging, highlight the square
+                toggleSquareHighlight(event);
             }
-
-            // If not dragging, handle square highlighting
-            toggleSquareHighlight(event);
+            isDragging = false; // Reset dragging state
         }
     });
 

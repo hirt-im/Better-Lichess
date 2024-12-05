@@ -109,7 +109,7 @@ const hexToRgba = (hex, alpha = 1) => {
 
 // Retrieve the saved color from storage and inject the CSS
 chrome.storage.sync.get("arrowColor", (data) => {
-    const savedColor = data.arrowColor || "#ff0000"; // Default to red
+    const savedColor = data.arrowColor || "#f0d314 ";
     injectDynamicCSS(savedColor);
     enableSquareHighlighting(); // Enable right-click highlighting for squares
 });

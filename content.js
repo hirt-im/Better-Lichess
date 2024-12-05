@@ -40,7 +40,7 @@ const injectDynamicCSS = (color) => {
     document.head.appendChild(style);
 };
 
-// Add a right-click event listener to highlight squares
+// Add a right-click event listener to highlight or unhighlight squares
 const enableSquareHighlighting = () => {
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault(); // Prevent the default right-click menu
@@ -64,19 +64,25 @@ const enableSquareHighlighting = () => {
 
         const highlightClass = "highlight-overlay";
 
-        // Remove any existing highlight
-        const existingHighlight = board.querySelector(`.${highlightClass}`);
-        if (existingHighlight) existingHighlight.remove();
+        // Check if the square is already highlighted
+        const existingHighlight = Array.from(board.querySelectorAll(`.${highlightClass}`)).find(
+            (highlight) => highlight.style.transform === transform
+        );
 
-        // Create a new highlight overlay
-        const highlight = document.createElement("div");
-        highlight.classList.add(highlightClass);
-        highlight.style.width = `${squareSize}px`;
-        highlight.style.height = `${squareSize}px`;
-        highlight.style.transform = transform;
+        if (existingHighlight) {
+            // If the square is already highlighted, remove the highlight
+            existingHighlight.remove();
+        } else {
+            // Otherwise, create a new highlight overlay
+            const highlight = document.createElement("div");
+            highlight.classList.add(highlightClass);
+            highlight.style.width = `${squareSize}px`;
+            highlight.style.height = `${squareSize}px`;
+            highlight.style.transform = transform;
 
-        // Append the highlight to the board
-        board.appendChild(highlight);
+            // Append the highlight to the board
+            board.appendChild(highlight);
+        }
     });
 };
 

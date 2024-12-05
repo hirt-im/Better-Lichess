@@ -2,7 +2,7 @@ let isDragging = false; // Track if the user is dragging
 let dragStartSquare = null; // Track the square where the drag started
 let startX = 0; // Track the X position where the right-click started
 let startY = 0; // Track the Y position where the right-click started
-const dragThreshold = 5; // Minimum movement (in pixels) to consider it a drag
+const dragThreshold = 50; // Minimum movement (in pixels) to consider it a drag
 
 const enableSquareHighlighting = () => {
     document.addEventListener("mousedown", (event) => {

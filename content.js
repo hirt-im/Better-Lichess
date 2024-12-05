@@ -12,6 +12,7 @@ const injectDynamicCSS = (color) => {
         }
         g circle {
             stroke: ${color} !important;
+            visibility: hidden !important;
         }
         square.move-dest {
             background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
@@ -22,6 +23,14 @@ const injectDynamicCSS = (color) => {
         square.premove-dest {
             background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
         }
+        .highlight-overlay {
+            border: none;
+            background-color: rgb(235, 97, 80);
+            opacity: 0.8;
+            pointer-events: none; /* Prevent interference with mouse events */
+            position: absolute;
+            z-index: 1;
+        }
     `;
 
     const style = document.createElement("style");
@@ -29,6 +38,46 @@ const injectDynamicCSS = (color) => {
     style.textContent = css;
 
     document.head.appendChild(style);
+};
+
+// Add a right-click event listener to highlight squares
+const enableSquareHighlighting = () => {
+    document.addEventListener("contextmenu", (event) => {
+        event.preventDefault(); // Prevent the default right-click menu
+
+        // Get the chessboard
+        const board = document.querySelector("cg-board");
+        if (!board) return;
+
+        // Calculate the clicked position
+        const rect = board.getBoundingClientRect();
+        const x = event.clientX - rect.left; // X position relative to the board
+        const y = event.clientY - rect.top;  // Y position relative to the board
+
+        // Calculate the square size and the row/column
+        const squareSize = rect.width / 8; // Assuming an 8x8 grid
+        const col = Math.floor(x / squareSize);
+        const row = Math.floor(y / squareSize);
+
+        // Translate these into `transform` values
+        const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
+
+        const highlightClass = "highlight-overlay";
+
+        // Remove any existing highlight
+        const existingHighlight = board.querySelector(`.${highlightClass}`);
+        if (existingHighlight) existingHighlight.remove();
+
+        // Create a new highlight overlay
+        const highlight = document.createElement("div");
+        highlight.classList.add(highlightClass);
+        highlight.style.width = `${squareSize}px`;
+        highlight.style.height = `${squareSize}px`;
+        highlight.style.transform = transform;
+
+        // Append the highlight to the board
+        board.appendChild(highlight);
+    });
 };
 
 // Convert hex to rgba
@@ -43,6 +92,7 @@ const hexToRgba = (hex, alpha = 1) => {
 chrome.storage.sync.get("arrowColor", (data) => {
     const savedColor = data.arrowColor || "#ff0000"; // Default to red
     injectDynamicCSS(savedColor);
+    enableSquareHighlighting(); // Enable right-click highlighting for squares
 });
 
 // Listen for changes to the color and update the CSS dynamically

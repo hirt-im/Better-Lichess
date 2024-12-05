@@ -16,6 +16,7 @@ const enableSquareHighlighting = () => {
 
         if (event.button === 2) { // Right mouse button
             const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
+            console.log(dragStartSquare, endSquare);
             if (dragStartSquare && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)) {
                 // Do not highlight if the drag ended on a different square
                 return;
@@ -34,7 +35,10 @@ const enableSquareHighlighting = () => {
     });
 
     document.addEventListener("contextmenu", (event) => {
-        event.preventDefault(); // Prevent the default right-click menu
+        const board = document.querySelector("cg-board");
+        if (board && board.contains(event.target)) {
+            event.preventDefault(); // Prevent the default context menu only on the chessboard
+        }
     });
 };
 

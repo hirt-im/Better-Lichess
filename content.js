@@ -1,16 +1,11 @@
 let dragStartSquare = null; // Track the square where the drag started
 
 const enableSquareHighlighting = () => {
-    document.addEventListener("contextmenu", (event) => {
-        const board = document.querySelector("cg-board");
-        if (board && board.contains(event.target)) {
-            event.preventDefault(); // Block the default context menu
-        }
-    });
     
-    document.addEventListener("mousedown", (event) => {
+    document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+        if (!board || !board.contains(event.target)) return; 
+        console.log('here', event.button)
 
         if (event.button === 2) { // Right mouse button
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
@@ -31,6 +26,7 @@ const enableSquareHighlighting = () => {
             }
             toggleSquareHighlight(event); // Highlight the square if it's the same as the starting square
         }
+        dragStartSquare = null;
     });
 
     // Add a left-click event listener to clear all highlights

@@ -32,6 +32,7 @@ const enableSquareHighlighting = () => {
     });
 
     document.addEventListener("mouseup", (event) => {
+        isDragging = false;
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
 

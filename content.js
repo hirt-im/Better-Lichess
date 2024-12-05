@@ -1,12 +1,20 @@
 let dragStartSquare = null; // Track the square where the drag started
 
 const enableSquareHighlighting = () => {
+    document.addEventListener("contextmenu", (event) => {
+        const board = document.querySelector("cg-board");
+        if (board && board.contains(event.target)) {
+            event.preventDefault(); // Block the default context menu
+        }
+    });
+    
     document.addEventListener("mousedown", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
 
         if (event.button === 2) { // Right mouse button
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
+            console.log(dragStartSquare);
         }
     });
 
@@ -136,7 +144,7 @@ const injectDynamicCSS = (color) => {
             visibility: hidden !important;
         }
         square.move-dest {
-            background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
+            background: radial-gradient(rgba(77,77,77,.5) 19%, rgba(0, 0, 0, 0) 20%) !important;
         }
         square.selected {
             background-color: ${hexToRgba(color, 0.5)} !important;

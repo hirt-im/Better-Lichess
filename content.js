@@ -31,7 +31,7 @@ if (siteButtons) {
     extensionMenu.style.zIndex = '999999';
     extensionMenu.style.color = '#e3e3e3';
 
-    // Insert the popup-like HTML structure, now also with Selected Square Color input
+    // Insert the popup-like HTML structure, now with hidden inputs and clickable circles
     extensionMenu.innerHTML = `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-family: sans-serif;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
@@ -39,8 +39,14 @@ if (siteButtons) {
         <!-- Arrow Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="arrowColor">Arrow Color</label>
-          <input type="color" id="arrowColor" style="margin: 0 auto;" />
+          <div style="position: relative; width:40px; height:40px;">
+            <input type="color" id="arrowColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
+            <div id="arrowColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+          </div>
         </div>
+
+
+
 
         <!-- Opacity -->
         <div style="display: flex; flex-direction: column; align-items: center;">
@@ -52,19 +58,28 @@ if (siteButtons) {
         <!-- Move Dest Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dot Color</label>
-          <input type="color" id="moveDestColor" style="margin: 0 auto;" />
+          <div style="position: relative; width:40px; height:40px;">
+            <input type="color" id="moveDestColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
+            <div id="moveDestColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+          </div>
         </div>
 
         <!-- Highlight Overlay Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="highlightOverlayColor">Highlight Color</label>
-          <input type="color" id="highlightOverlayColor" style="margin: 0 auto;" />
+          <div style="position: relative; width:40px; height:40px;">
+            <input type="color" id="highlightOverlayColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
+            <div id="highlightOverlayColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+          </div>
         </div>
 
         <!-- Selected Square Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="selectedSquareColor">Selected Square Color</label>
-          <input type="color" id="selectedSquareColor" style="margin: 0 auto;" />
+          <div style="position: relative; width:40px; height:40px;">
+            <input type="color" id="selectedSquareColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
+            <div id="selectedSquareColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+          </div>
         </div>
 
       </div>
@@ -105,39 +120,41 @@ if (siteButtons) {
         const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
         colorInput.value = savedColor;
-        colorInput.style.border = 'none';
-        colorInput.style.width = '40px';
-        colorInput.style.height = '40px';
-        colorInput.style.padding = '0';
-
         moveDestColorInput.value = savedMoveDestColor;
-        moveDestColorInput.style.border = 'none';
-        moveDestColorInput.style.width = '40px';
-        moveDestColorInput.style.height = '40px';
-        moveDestColorInput.style.padding = '0';
-
         highlightOverlayColorInput.value = savedHighlightOverlayColor;
-        highlightOverlayColorInput.style.border = 'none';
-        highlightOverlayColorInput.style.width = '40px';
-        highlightOverlayColorInput.style.height = '40px';
-        highlightOverlayColorInput.style.padding = '0';
-
         selectedSquareColorInput.value = savedSelectedSquareColor;
-        selectedSquareColorInput.style.border = 'none';
-        selectedSquareColorInput.style.width = '40px';
-        selectedSquareColorInput.style.height = '40px';
-        selectedSquareColorInput.style.padding = '0';
+
+        // Update the circle backgrounds
+        document.getElementById('arrowColorCircle').style.backgroundColor = savedColor;
+        document.getElementById('moveDestColorCircle').style.backgroundColor = savedMoveDestColor;
+        document.getElementById('highlightOverlayColorCircle').style.backgroundColor = savedHighlightOverlayColor;
+        document.getElementById('selectedSquareColorCircle').style.backgroundColor = savedSelectedSquareColor;
 
         opacitySlider.value = savedOpacity;
         opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
     });
 
-    // Update displayed opacity value when the slider moves
-    opacitySlider.addEventListener("input", () => {
-        opacityValueDisplay.textContent = parseFloat(opacitySlider.value).toFixed(2);
+    // Show color picker when the circles are clicked
+    document.getElementById('arrowColorCircle').addEventListener('click', () => colorInput.click());
+    document.getElementById('moveDestColorCircle').addEventListener('click', () => moveDestColorInput.click());
+    document.getElementById('highlightOverlayColorCircle').addEventListener('click', () => highlightOverlayColorInput.click());
+    document.getElementById('selectedSquareColorCircle').addEventListener('click', () => selectedSquareColorInput.click());
+
+    // Update circle background on color input changes
+    colorInput.addEventListener('change', () => {
+        document.getElementById('arrowColorCircle').style.backgroundColor = colorInput.value;
+    });
+    moveDestColorInput.addEventListener('change', () => {
+        document.getElementById('moveDestColorCircle').style.backgroundColor = moveDestColorInput.value;
+    });
+    highlightOverlayColorInput.addEventListener('change', () => {
+        document.getElementById('highlightOverlayColorCircle').style.backgroundColor = highlightOverlayColorInput.value;
+    });
+    selectedSquareColorInput.addEventListener('change', () => {
+        document.getElementById('selectedSquareColorCircle').style.backgroundColor = selectedSquareColorInput.value;
     });
 
-    // Save button logic (also saves selectedSquareColor)
+    // Save button logic
     saveButton.addEventListener("click", () => {
         const color = colorInput.value;
         const moveDestColor = moveDestColorInput.value;
@@ -156,7 +173,7 @@ if (siteButtons) {
         });
     });
 
-    // Reset to default logic (also resets selectedSquareColor)
+    // Reset to default logic
     resetButton.addEventListener("click", () => {
         chrome.storage.sync.set({ 
             arrowColor: DEFAULT_COLOR, 
@@ -169,6 +186,12 @@ if (siteButtons) {
             moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
             highlightOverlayColorInput.value = DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
             selectedSquareColorInput.value = DEFAULT_SELECTED_COLOR;
+
+            document.getElementById('arrowColorCircle').style.backgroundColor = DEFAULT_COLOR;
+            document.getElementById('moveDestColorCircle').style.backgroundColor = DEFAULT_MOVE_DEST_COLOR;
+            document.getElementById('highlightOverlayColorCircle').style.backgroundColor = DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
+            document.getElementById('selectedSquareColorCircle').style.backgroundColor = DEFAULT_SELECTED_COLOR;
+
             opacitySlider.value = DEFAULT_OPACITY;
             opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
             console.log("Arrow settings reset to default:", { 

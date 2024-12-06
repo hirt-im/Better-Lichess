@@ -62,10 +62,10 @@ if (siteButtons) {
         const savedOpacity = data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY;
 
         colorInput.value = savedColor;
-        colorInput.style.background = savedColor;
         colorInput.style.border = 'none';
         colorInput.style.width = '40px';
         colorInput.style.height = '40px';
+        colorInput.style.padding = '0';
 
         console.log('color', savedColor);
         opacitySlider.value = savedOpacity;

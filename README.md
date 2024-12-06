@@ -17,7 +17,7 @@ Chrome extension that changes the drawable arrows, square highlighting, and move
 
 ## Usage
 
-1. Open Lichess in your browser and highlighting and arrows will automatically be changed.
+1. Arrows, highligting, and move dots will be changed upon installation.
 
 2. To customize the arrows, click on the crossing arrows icon:
 

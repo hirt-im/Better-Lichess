@@ -1,3 +1,99 @@
+// Locate the .site-buttons container in the DOM
+const siteButtons = document.querySelector('.site-buttons');
+if (siteButtons) {
+    // Create the Extension Settings toggle button
+    const extensionBtn = document.createElement('button');
+    extensionBtn.id = 'extension-settings-toggle';
+    extensionBtn.className = 'toggle link';
+    extensionBtn.textContent = 'Extension Settings';
+
+    // Append the button to .site-buttons
+    siteButtons.appendChild(extensionBtn);
+
+    // Create a container for the settings menu
+    const extensionMenu = document.createElement('div');
+    extensionMenu.id = 'extension-menu';
+    extensionMenu.style.display = 'none'; // Hidden by default
+    extensionMenu.style.position = 'absolute';
+    extensionMenu.style.right = '20px';
+    extensionMenu.style.top = '50px';
+    extensionMenu.style.background = '#fff';
+    extensionMenu.style.border = '1px solid #ccc';
+    extensionMenu.style.padding = '10px';
+    extensionMenu.style.zIndex = '999999';
+
+    // Insert the popup-like HTML structure into the menu
+    extensionMenu.innerHTML = `
+      <h3>Choose Arrow Color and Opacity</h3>
+      <div>
+        <label for="arrowColor">Color:</label>
+        <input type="color" id="arrowColor" />
+      </div>
+      <div>
+        <label for="arrowOpacity">Opacity (0.0 to 1.0):</label>
+        <input type="range" id="arrowOpacity" min="0" max="1" step="0.01" />
+        <span id="opacityValue"></span>
+      </div>
+      <button id="saveSettings">Apply</button>
+      <button id="resetDefaults">Reset to Default</button>
+    `;
+
+    document.body.appendChild(extensionMenu);
+
+    // Toggle the visibility of the menu when the button is clicked
+    extensionBtn.addEventListener('click', () => {
+        extensionMenu.style.display = (extensionMenu.style.display === 'none') ? 'block' : 'none';
+    });
+
+    // Adapted logic from popup.js
+    const DEFAULT_COLOR = "#f2c218";
+    const DEFAULT_OPACITY = 1.0;
+    const colorInput = extensionMenu.querySelector('#arrowColor');
+    const opacitySlider = extensionMenu.querySelector('#arrowOpacity');
+    const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
+    const saveButton = extensionMenu.querySelector('#saveSettings');
+    const resetButton = extensionMenu.querySelector('#resetDefaults');
+
+    // Retrieve the saved settings
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
+        const savedColor = data.arrowColor || DEFAULT_COLOR;
+        const savedOpacity = data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY;
+
+        colorInput.value = savedColor;
+        opacitySlider.value = savedOpacity;
+        opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
+    });
+
+    // Update displayed opacity value when the slider moves
+    opacitySlider.addEventListener("input", () => {
+        opacityValueDisplay.textContent = parseFloat(opacitySlider.value).toFixed(2);
+    });
+
+    // Save button logic
+    saveButton.addEventListener("click", () => {
+        const color = colorInput.value;
+        const opacity = parseFloat(opacitySlider.value);
+
+        chrome.storage.sync.set({ arrowColor: color, arrowOpacity: opacity }, () => {
+            console.log("Arrow settings saved:", { color, opacity });
+        });
+    });
+
+    // Reset to default logic
+    resetButton.addEventListener("click", () => {
+        chrome.storage.sync.set({ arrowColor: DEFAULT_COLOR, arrowOpacity: DEFAULT_OPACITY }, () => {
+            colorInput.value = DEFAULT_COLOR;
+            opacitySlider.value = DEFAULT_OPACITY;
+            opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
+            console.log("Arrow settings reset to default:", { color: DEFAULT_COLOR, opacity: DEFAULT_OPACITY });
+        });
+    });
+}
+
+
+
+
+
 let dragStartSquare = null; // Track the square where the drag started
 
 const enableSquareHighlighting = () => {

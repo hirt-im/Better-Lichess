@@ -41,26 +41,21 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="arrowColor">Arrow Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="arrowColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="arrowColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+            <div id="arrowColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
           </div>
         </div>
 
 
 
 
-        <!-- Opacity -->
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Arrow Opacity</label>
-          <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
-          <span id="opacityValue"></span>
-        </div>
+       
 
         <!-- Move Dest Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dot Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="moveDestColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="moveDestColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+            <div id="moveDestColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
           </div>
         </div>
 
@@ -69,7 +64,7 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="highlightOverlayColor">Highlight Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="highlightOverlayColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="highlightOverlayColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+            <div id="highlightOverlayColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
           </div>
         </div>
 
@@ -78,8 +73,14 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="selectedSquareColor">Selected Square Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="selectedSquareColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="selectedSquareColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer;"></div>
+            <div id="selectedSquareColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
           </div>
+        </div>
+
+         <!-- Opacity -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Arrow Opacity</label>
+          <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
         </div>
 
       </div>

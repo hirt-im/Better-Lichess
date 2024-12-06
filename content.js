@@ -45,11 +45,6 @@ if (siteButtons) {
           </div>
         </div>
 
-
-
-
-       
-
         <!-- Move Dest Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dots</label>

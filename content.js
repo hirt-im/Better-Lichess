@@ -29,16 +29,16 @@ if (siteButtons) {
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-family: sans-serif;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
         <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit;" for="arrowColor">Color</label>
+          <label style="font: inherit; font-weight: bold;" for="arrowColor">Color</label>
           <input type="color" id="arrowColor" style="margin: 0 auto;" />
         </div>
         <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit;" for="arrowOpacity">Opacity</label>
+          <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Opacity</label>
           <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
         </div>
       </div>
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
-        <button id="saveSettings" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #848484; cursor: pointer; font: inherit; font-weight: bold;">
+        <button id="saveSettings" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #373737; cursor: pointer; font: inherit; font-weight: bold;">
           Apply
         </button>
         <button id="resetDefaults" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #848484; cursor: pointer; font: inherit; font-weight: bold;"> 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Custom Lichess Arrows",
+  "name": "Better Lichess",
   "version": "1.0",
-  "description": "Customize the color of the drawable arrows in Lichess.",
+  "description": "Changes square highlighting and drawable arrows on Lichess. Arrow color and opacity can be customized.",
   "permissions": ["scripting", "storage"],
   "host_permissions": ["https://lichess.org/*"],
   "content_scripts": [
@@ -22,6 +22,6 @@
   },
   "action": {
     "default_icon": "icon.png",
-    "default_title": "Custom Lichess Arrows"
+    "default_title": "Better Lichess"
   }
 }

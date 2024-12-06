@@ -26,19 +26,24 @@ if (siteButtons) {
 
     // Insert the popup-like HTML structure into the menu
     extensionMenu.innerHTML = `
-      <h3>Choose Arrow Color and Opacity</h3>
-      <div>
-        <label for="arrowColor">Color:</label>
-        <input type="color" id="arrowColor" />
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; ">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit;" for="arrowColor">Color</label>
+          <input type="color" id="arrowColor" style="margin: 0 auto;" />
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit;" for="arrowOpacity">Opacity</label>
+          <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
+        </div>
       </div>
-      <div>
-        <label for="arrowOpacity">Opacity (0.0 to 1.0):</label>
-        <input type="range" id="arrowOpacity" min="0" max="1" step="0.01" />
-        <span id="opacityValue"></span>
+      <div style="display: flex; gap: 10px;">
+        <button id="saveSettings">Apply</button>
+        <button id="resetDefaults">Reset to Default</button>
       </div>
-      <button id="saveSettings">Apply</button>
-      <button id="resetDefaults">Reset to Default</button>
-    `;
+    </div>
+  `;
+  
 
     document.body.appendChild(extensionMenu);
 

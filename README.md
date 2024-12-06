@@ -17,7 +17,7 @@ Chrome extension that changes the drawable arrows, square highlighting, and move
 
 ## Usage
 
-1. Arrows, highligting, and move dots will be changed upon installation.
+1. Arrows, highligting, and move dots are automatically changed.
 
 2. To customize the arrows, click on the crossing arrows icon:
 

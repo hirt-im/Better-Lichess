@@ -1,15 +1,27 @@
 {
-    "manifest_version": 3,
-    "name": "Custom Lichess Arrows",
-    "version": "1.0",
-    "description": "Customize the color of the drawable arrows in Lichess.",
-    "permissions": ["scripting", "storage"],
-    "host_permissions": ["https://lichess.org/*"],
-    "content_scripts": [
-      {
-        "matches": ["https://lichess.org/*"],
-        "js": ["content.js"]
-      }
-    ]
+  "manifest_version": 3,
+  "name": "Custom Lichess Arrows",
+  "version": "1.0",
+  "description": "Customize the color of the drawable arrows in Lichess.",
+  "permissions": ["scripting", "storage"],
+  "host_permissions": ["https://lichess.org/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://lichess.org/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["icon.png"],
+    "matches": ["<all_urls>"]
+  }],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_icon": "icon.png",
+    "default_title": "Custom Lichess Arrows"
+  }
 }
-  

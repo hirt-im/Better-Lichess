@@ -2,10 +2,18 @@
 const siteButtons = document.querySelector('.site-buttons');
 if (siteButtons) {
     // Create the Extension Settings toggle button
+    // const extensionBtn = document.createElement('button');
+    // extensionBtn.id = 'extension-settings-toggle';
+    // extensionBtn.className = 'toggle link';
+    // extensionBtn.textContent = 'Extension Settings';
+
+
     const extensionBtn = document.createElement('button');
-    extensionBtn.id = 'extension-settings-toggle';
-    extensionBtn.className = 'toggle link';
-    extensionBtn.textContent = 'Extension Settings';
+extensionBtn.id = 'extension-settings-toggle';
+extensionBtn.className = 'toggle link';
+// Instead of textContent, use innerHTML to include the icon
+extensionBtn.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" alt="Settings Icon" style="width:20px;height:20px;vertical-align:middle;margin-right:5px;">`;
+
 
     // Append the button to .site-buttons
     siteButtons.appendChild(extensionBtn);

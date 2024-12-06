@@ -41,7 +41,7 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="arrowColor">Arrow Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="arrowColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="arrowColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
+            <div id="arrowColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white; margin-top: 3px;"></div>
           </div>
         </div>
 
@@ -55,7 +55,7 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dot Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="moveDestColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="moveDestColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
+            <div id="moveDestColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white; margin-top: 3px"></div>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="highlightOverlayColor">Highlight Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="highlightOverlayColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="highlightOverlayColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
+            <div id="highlightOverlayColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white; margin-top: 3px"></div>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ if (siteButtons) {
           <label style="font: inherit; font-weight: bold;" for="selectedSquareColor">Selected Square Color</label>
           <div style="position: relative; width:40px; height:40px;">
             <input type="color" id="selectedSquareColor" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;" />
-            <div id="selectedSquareColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white;"></div>
+            <div id="selectedSquareColorCircle" style="border-radius:50%; width:40px; height:40px; cursor: pointer; border: 1px solid white; margin-top: 3px"></div>
           </div>
         </div>
 

@@ -17,10 +17,12 @@ if (siteButtons) {
     extensionMenu.style.position = 'absolute';
     extensionMenu.style.right = '20px';
     extensionMenu.style.top = '50px';
-    extensionMenu.style.background = '#fff';
-    extensionMenu.style.border = '1px solid #ccc';
+    extensionMenu.style.background = 'rgb(66 66 66)';
+    extensionMenu.style.border = '1px solid #bababa';
+    extensionMenu.style.borderRadius = '5px';
     extensionMenu.style.padding = '10px';
     extensionMenu.style.zIndex = '999999';
+    extensionMenu.style.color = '#e3e3e3';
 
     // Insert the popup-like HTML structure into the menu
     extensionMenu.innerHTML = `

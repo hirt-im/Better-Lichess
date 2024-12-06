@@ -2,6 +2,7 @@
 const DEFAULT_COLOR = "#f2c218";
 const DEFAULT_OPACITY = 1.0;
 const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; // Default for move destination dots
+const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; // Default for highlight overlay color
 
 // Extension button and menu
 const siteButtons = document.querySelector('.site-buttons');
@@ -29,7 +30,7 @@ if (siteButtons) {
     extensionMenu.style.zIndex = '999999';
     extensionMenu.style.color = '#e3e3e3';
 
-    // Insert the popup-like HTML structure, now with Move Dest Color input
+    // Insert the popup-like HTML structure, now also with Highlight Overlay Color input
     extensionMenu.innerHTML = `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-family: sans-serif;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
@@ -39,23 +40,26 @@ if (siteButtons) {
           <input type="color" id="arrowColor" style="margin: 0 auto;" />
         </div>
 
-         <!-- Opacity -->
+        <!-- Opacity -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Arrow Opacity</label>
           <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
           <span id="opacityValue"></span>
         </div>
-        
+
         <!-- Move Dest Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dot Color</label>
           <input type="color" id="moveDestColor" style="margin: 0 auto;" />
         </div>
 
+        <!-- Highlight Overlay Color -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit; font-weight: bold;" for="highlightOverlayColor">Highlight Color</label>
+          <input type="color" id="highlightOverlayColor" style="margin: 0 auto;" />
+        </div>
       </div>
         
-       
-      
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
         <button id="saveSettings" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #373737; cursor: pointer; font: inherit; font-weight: bold;">
           Apply
@@ -76,16 +80,18 @@ if (siteButtons) {
 
     const colorInput = extensionMenu.querySelector('#arrowColor');
     const moveDestColorInput = extensionMenu.querySelector('#moveDestColor');
+    const highlightOverlayColorInput = extensionMenu.querySelector('#highlightOverlayColor');
     const opacitySlider = extensionMenu.querySelector('#arrowOpacity');
     const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
     const saveButton = extensionMenu.querySelector('#saveSettings');
     const resetButton = extensionMenu.querySelector('#resetDefaults');
 
-    // Retrieve the saved settings including moveDestColor
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
+    // Retrieve the saved settings including highlightOverlayColor
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor"], (data) => {
         const savedColor = data.arrowColor || DEFAULT_COLOR;
         const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
         const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
+        const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
 
         colorInput.value = savedColor;
         colorInput.style.border = 'none';
@@ -99,6 +105,12 @@ if (siteButtons) {
         moveDestColorInput.style.height = '40px';
         moveDestColorInput.style.padding = '0';
 
+        highlightOverlayColorInput.value = savedHighlightOverlayColor;
+        highlightOverlayColorInput.style.border = 'none';
+        highlightOverlayColorInput.style.width = '40px';
+        highlightOverlayColorInput.style.height = '40px';
+        highlightOverlayColorInput.style.padding = '0';
+
         opacitySlider.value = savedOpacity;
         opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
     });
@@ -108,25 +120,42 @@ if (siteButtons) {
         opacityValueDisplay.textContent = parseFloat(opacitySlider.value).toFixed(2);
     });
 
-    // Save button logic (now also saves moveDestColor)
+    // Save button logic (also saves highlightOverlayColor)
     saveButton.addEventListener("click", () => {
         const color = colorInput.value;
         const moveDestColor = moveDestColorInput.value;
+        const highlightOverlayColor = highlightOverlayColorInput.value;
         const opacity = parseFloat(opacitySlider.value);
 
-        chrome.storage.sync.set({ arrowColor: color, arrowOpacity: opacity, moveDestColor: moveDestColor }, () => {
-            console.log("Arrow settings saved:", { color, opacity, moveDestColor });
+        chrome.storage.sync.set({ 
+            arrowColor: color, 
+            arrowOpacity: opacity, 
+            moveDestColor: moveDestColor,
+            highlightOverlayColor: highlightOverlayColor
+        }, () => {
+            console.log("Arrow settings saved:", { color, opacity, moveDestColor, highlightOverlayColor });
         });
     });
 
-    // Reset to default logic (also resets moveDestColor)
+    // Reset to default logic (also resets highlightOverlayColor)
     resetButton.addEventListener("click", () => {
-        chrome.storage.sync.set({ arrowColor: DEFAULT_COLOR, arrowOpacity: DEFAULT_OPACITY, moveDestColor: DEFAULT_MOVE_DEST_COLOR }, () => {
+        chrome.storage.sync.set({ 
+            arrowColor: DEFAULT_COLOR, 
+            arrowOpacity: DEFAULT_OPACITY, 
+            moveDestColor: DEFAULT_MOVE_DEST_COLOR, 
+            highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR 
+        }, () => {
             colorInput.value = DEFAULT_COLOR;
             moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
+            highlightOverlayColorInput.value = DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
             opacitySlider.value = DEFAULT_OPACITY;
             opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
-            console.log("Arrow settings reset to default:", { color: DEFAULT_COLOR, opacity: DEFAULT_OPACITY, moveDestColor: DEFAULT_MOVE_DEST_COLOR });
+            console.log("Arrow settings reset to default:", { 
+                color: DEFAULT_COLOR, 
+                opacity: DEFAULT_OPACITY, 
+                moveDestColor: DEFAULT_MOVE_DEST_COLOR,
+                highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR 
+            });
         });
     });
 }
@@ -239,34 +268,36 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Get saved settings and inject CSS into page, now also including moveDestColor
-chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
+// Get saved settings and inject CSS into page, including highlightOverlayColor
+chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor"], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
     const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
+    const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
 
-    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor);
+    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor);
     enableSquareHighlighting(); // Enable right-click highlighting for squares
 });
 
-// Listen for changes in settings, including moveDestColor
+// Listen for changes in settings, including highlightOverlayColor
 chrome.storage.onChanged.addListener((changes) => {
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor"], (data) => {
         const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
-        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) ? changes.arrowOpacity.newValue
-                                 : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
+        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) 
+            ? changes.arrowOpacity.newValue
+            : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
         const updatedMoveDestColor = (changes.moveDestColor && changes.moveDestColor.newValue) || data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
+        const updatedHighlightOverlayColor = (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue) || data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
 
-        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor);
+        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor, updatedHighlightOverlayColor);
     });
 });
 
-// Modified injectDynamicCSS to take moveDestColor
-const injectDynamicCSS = (color, opacity, moveDestColor) => {
+// Modified injectDynamicCSS to take highlightOverlayColor
+const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
 
-    // Use moveDestColor in square.move-dest background
     const css = `
         g line {
             stroke: ${color} !important;
@@ -290,7 +321,7 @@ const injectDynamicCSS = (color, opacity, moveDestColor) => {
         }
         .highlight-overlay {
             border: none;
-            background-color: rgb(235, 97, 80);
+            background-color: ${highlightOverlayColor};
             opacity: 0.8;
             pointer-events: none; /* Prevent interference with mouse events */
             position: absolute;

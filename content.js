@@ -9,14 +9,14 @@ if (siteButtons) {
 
 
     const extensionBtn = document.createElement('button');
-extensionBtn.id = 'extension-settings-toggle';
-extensionBtn.className = 'toggle link';
-// Instead of textContent, use innerHTML to include the icon
-extensionBtn.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" alt="Settings Icon" style="width:20px;height:20px;vertical-align:middle;margin-right:5px;">`;
+    extensionBtn.id = 'extension-settings-toggle';
+    extensionBtn.className = 'toggle link';
+    extensionBtn.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" alt="Settings Icon" style="width:20px;height:20px;vertical-align:middle;">`;
 
 
     // Append the button to .site-buttons
-    siteButtons.appendChild(extensionBtn);
+    const lastChild = siteButtons.lastElementChild;
+    siteButtons.insertBefore(extensionBtn, lastChild);
 
     // Create a container for the settings menu
     const extensionMenu = document.createElement('div');

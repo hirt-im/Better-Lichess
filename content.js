@@ -60,6 +60,12 @@ if (siteButtons) {
         const savedOpacity = data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY;
 
         colorInput.value = savedColor;
+        colorInput.style.background = savedColor;
+        colorInput.style.border = 'none';
+        colorInput.style.width = '40px';
+        colorInput.style.height = '40px';
+
+        console.log('color', savedColor);
         opacitySlider.value = savedOpacity;
         opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
     });
@@ -264,6 +270,9 @@ const injectDynamicCSS = (color, opacity) => {
         }
         cg-container .cg-shapes {
             opacity: ${opacity} !important;
+        }
+        input::-webkit-color-swatch {
+            border: none;
         }
     `;
 

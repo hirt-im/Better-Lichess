@@ -5,9 +5,6 @@
     "description": "Customize the color of the drawable arrows in Lichess.",
     "permissions": ["scripting", "storage"],
     "host_permissions": ["https://lichess.org/*"],
-    "action": {
-      "default_popup": "popup.html"
-    },
     "content_scripts": [
       {
         "matches": ["https://lichess.org/*"],

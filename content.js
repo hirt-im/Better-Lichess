@@ -35,23 +35,26 @@ if (siteButtons) {
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
         <!-- Arrow Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit; font-weight: bold;" for="arrowColor">Color</label>
+          <label style="font: inherit; font-weight: bold;" for="arrowColor">Arrow Color</label>
           <input type="color" id="arrowColor" style="margin: 0 auto;" />
+        </div>
+
+         <!-- Opacity -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Arrow Opacity</label>
+          <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
+          <span id="opacityValue"></span>
         </div>
         
         <!-- Move Dest Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dest Color</label>
+          <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dot Color</label>
           <input type="color" id="moveDestColor" style="margin: 0 auto;" />
         </div>
-        
-        <!-- Opacity -->
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Opacity</label>
-          <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
-          <span id="opacityValue"></span>
-        </div>
+
       </div>
+        
+       
       
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
         <button id="saveSettings" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #373737; cursor: pointer; font: inherit; font-weight: bold;">

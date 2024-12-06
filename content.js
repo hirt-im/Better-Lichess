@@ -271,7 +271,7 @@ const injectDynamicCSS = (color, opacity) => {
             background-color: ${hexToRgba(color, 0.5)} !important;
         }
         square.premove-dest {
-            background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
+            background: radial-gradient(rgba(77,77,77,.5) 19%, rgba(0, 0, 0, 0) 20%) !important;
         }
         .highlight-overlay {
             border: none;

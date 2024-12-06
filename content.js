@@ -1,18 +1,11 @@
-// Locate the .site-buttons container in the DOM
+// Extension button and menu
 const siteButtons = document.querySelector('.site-buttons');
 if (siteButtons) {
-    // Create the Extension Settings toggle button
-    // const extensionBtn = document.createElement('button');
-    // extensionBtn.id = 'extension-settings-toggle';
-    // extensionBtn.className = 'toggle link';
-    // extensionBtn.textContent = 'Extension Settings';
-
 
     const extensionBtn = document.createElement('button');
     extensionBtn.id = 'extension-settings-toggle';
     extensionBtn.className = 'toggle link';
     extensionBtn.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" alt="Settings Icon" style="width:20px;height:20px;vertical-align:middle;">`;
-
 
     // Append the button to .site-buttons
     const lastChild = siteButtons.lastElementChild;
@@ -116,11 +109,8 @@ if (siteButtons) {
 }
 
 
-
-
-
+// Square highlighting 
 let dragStartSquare = null; // Track the square where the drag started
-
 const enableSquareHighlighting = () => {
     
     document.addEventListener("pointerdown", (event) => {
@@ -166,6 +156,7 @@ const enableSquareHighlighting = () => {
         }
     });
 };
+
 
 const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
@@ -220,7 +211,7 @@ const getSquareFromEvent = (event) => {
     return { row, col };
 };
 
-// Convert hex to rgba
+// Hex to rgba helper function
 const hexToRgba = (hex, alpha = 1) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -228,6 +219,8 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+
+// Get saved settings and inject CSS into page
 chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
     const savedColor = data.arrowColor || "#f2c218";
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : 1.0;
@@ -237,6 +230,7 @@ chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
 });
 
 
+// Listen for changes in settings
 chrome.storage.onChanged.addListener((changes) => {
     let newColor, newOpacity;
     if (changes.arrowColor) {

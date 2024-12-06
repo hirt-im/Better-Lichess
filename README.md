@@ -17,11 +17,11 @@ Chrome extension that changes the drawable arrows and square highlighting on Lic
 
 ## Usage
 
-1. Open Lichess in your browser; highlighting and arrows will automatically be changed.
+1. Open Lichess in your browser and highlighting and arrows will automatically be changed.
 
 2. To customize the arrows, click on the crossing arrows icon:
 
-![image](https://github.com/user-attachments/assets/51ccb77a-1c3e-4c3d-9a87-2b92d7495363)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![image](https://github.com/user-attachments/assets/51ccb77a-1c3e-4c3d-9a87-2b92d7495363)
 
 
 3. Use the color picker and opacity slider to change settings, then click **Apply**.

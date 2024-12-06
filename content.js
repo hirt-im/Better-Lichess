@@ -1,13 +1,17 @@
+// Default values
+const DEFAULT_COLOR = "#f2c218";
+const DEFAULT_OPACITY = 1.0;
+const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; // Default for move destination dots
+
 // Extension button and menu
 const siteButtons = document.querySelector('.site-buttons');
 if (siteButtons) {
-
     const extensionBtn = document.createElement('button');
     extensionBtn.id = 'extension-settings-toggle';
     extensionBtn.className = 'toggle link';
     extensionBtn.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" alt="Settings Icon" style="width:20px;height:20px;vertical-align:middle;">`;
 
-    // Append the button to .site-buttons
+    // Insert as second-to-last element
     const lastChild = siteButtons.lastElementChild;
     siteButtons.insertBefore(extensionBtn, lastChild);
 
@@ -25,19 +29,30 @@ if (siteButtons) {
     extensionMenu.style.zIndex = '999999';
     extensionMenu.style.color = '#e3e3e3';
 
-    // Insert the popup-like HTML structure into the menu
+    // Insert the popup-like HTML structure, now with Move Dest Color input
     extensionMenu.innerHTML = `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-family: sans-serif;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <!-- Arrow Color -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="arrowColor">Color</label>
           <input type="color" id="arrowColor" style="margin: 0 auto;" />
         </div>
+        
+        <!-- Move Dest Color -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit; font-weight: bold;" for="moveDestColor">Move Dest Color</label>
+          <input type="color" id="moveDestColor" style="margin: 0 auto;" />
+        </div>
+        
+        <!-- Opacity -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <label style="font: inherit; font-weight: bold;" for="arrowOpacity">Opacity</label>
           <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
+          <span id="opacityValue"></span>
         </div>
       </div>
+      
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
         <button id="saveSettings" style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 4px; background-color: #f3f3f3; color: #373737; cursor: pointer; font: inherit; font-weight: bold;">
           Apply
@@ -48,7 +63,6 @@ if (siteButtons) {
       </div>
     </div>
   `;
-  
 
     document.body.appendChild(extensionMenu);
 
@@ -57,19 +71,18 @@ if (siteButtons) {
         extensionMenu.style.display = (extensionMenu.style.display === 'none') ? 'block' : 'none';
     });
 
-    // Adapted logic from popup.js
-    const DEFAULT_COLOR = "#f2c218";
-    const DEFAULT_OPACITY = 1.0;
     const colorInput = extensionMenu.querySelector('#arrowColor');
+    const moveDestColorInput = extensionMenu.querySelector('#moveDestColor');
     const opacitySlider = extensionMenu.querySelector('#arrowOpacity');
     const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
     const saveButton = extensionMenu.querySelector('#saveSettings');
     const resetButton = extensionMenu.querySelector('#resetDefaults');
 
-    // Retrieve the saved settings
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
+    // Retrieve the saved settings including moveDestColor
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
         const savedColor = data.arrowColor || DEFAULT_COLOR;
-        const savedOpacity = data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY;
+        const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
+        const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
 
         colorInput.value = savedColor;
         colorInput.style.border = 'none';
@@ -77,7 +90,12 @@ if (siteButtons) {
         colorInput.style.height = '40px';
         colorInput.style.padding = '0';
 
-        console.log('color', savedColor);
+        moveDestColorInput.value = savedMoveDestColor;
+        moveDestColorInput.style.border = 'none';
+        moveDestColorInput.style.width = '40px';
+        moveDestColorInput.style.height = '40px';
+        moveDestColorInput.style.padding = '0';
+
         opacitySlider.value = savedOpacity;
         opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
     });
@@ -87,32 +105,32 @@ if (siteButtons) {
         opacityValueDisplay.textContent = parseFloat(opacitySlider.value).toFixed(2);
     });
 
-    // Save button logic
+    // Save button logic (now also saves moveDestColor)
     saveButton.addEventListener("click", () => {
         const color = colorInput.value;
+        const moveDestColor = moveDestColorInput.value;
         const opacity = parseFloat(opacitySlider.value);
 
-        chrome.storage.sync.set({ arrowColor: color, arrowOpacity: opacity }, () => {
-            console.log("Arrow settings saved:", { color, opacity });
+        chrome.storage.sync.set({ arrowColor: color, arrowOpacity: opacity, moveDestColor: moveDestColor }, () => {
+            console.log("Arrow settings saved:", { color, opacity, moveDestColor });
         });
     });
 
-    // Reset to default logic
+    // Reset to default logic (also resets moveDestColor)
     resetButton.addEventListener("click", () => {
-        chrome.storage.sync.set({ arrowColor: DEFAULT_COLOR, arrowOpacity: DEFAULT_OPACITY }, () => {
+        chrome.storage.sync.set({ arrowColor: DEFAULT_COLOR, arrowOpacity: DEFAULT_OPACITY, moveDestColor: DEFAULT_MOVE_DEST_COLOR }, () => {
             colorInput.value = DEFAULT_COLOR;
+            moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
             opacitySlider.value = DEFAULT_OPACITY;
             opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
-            console.log("Arrow settings reset to default:", { color: DEFAULT_COLOR, opacity: DEFAULT_OPACITY });
+            console.log("Arrow settings reset to default:", { color: DEFAULT_COLOR, opacity: DEFAULT_OPACITY, moveDestColor: DEFAULT_MOVE_DEST_COLOR });
         });
     });
 }
 
-
-// Square highlighting 
+// Square highlighting (unchanged)
 let dragStartSquare = null; // Track the square where the drag started
 const enableSquareHighlighting = () => {
-    
     document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; 
@@ -156,7 +174,6 @@ const enableSquareHighlighting = () => {
         }
     });
 };
-
 
 const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
@@ -219,39 +236,34 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// Get saved settings and inject CSS into page, now also including moveDestColor
+chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
+    const savedColor = data.arrowColor || DEFAULT_COLOR;
+    const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
+    const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
 
-// Get saved settings and inject CSS into page
-chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
-    const savedColor = data.arrowColor || "#f2c218";
-    const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : 1.0;
-
-    injectDynamicCSS(savedColor, savedOpacity);
+    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor);
     enableSquareHighlighting(); // Enable right-click highlighting for squares
 });
 
-
-// Listen for changes in settings
+// Listen for changes in settings, including moveDestColor
 chrome.storage.onChanged.addListener((changes) => {
-    let newColor, newOpacity;
-    if (changes.arrowColor) {
-        newColor = changes.arrowColor.newValue;
-    }
-    if (changes.arrowOpacity) {
-        newOpacity = changes.arrowOpacity.newValue;
-    }
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor"], (data) => {
+        const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
+        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) ? changes.arrowOpacity.newValue
+                                 : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
+        const updatedMoveDestColor = (changes.moveDestColor && changes.moveDestColor.newValue) || data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
 
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity"], (data) => {
-        const updatedColor = newColor || data.arrowColor || "#f2c218";
-        const updatedOpacity = (newOpacity !== undefined) ? newOpacity : (data.arrowOpacity !== undefined ? data.arrowOpacity : 1.0);
-        injectDynamicCSS(updatedColor, updatedOpacity);
+        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor);
     });
 });
 
-// Inject dynamic CSS
-const injectDynamicCSS = (color, opacity) => {
+// Modified injectDynamicCSS to take moveDestColor
+const injectDynamicCSS = (color, opacity, moveDestColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
 
+    // Use moveDestColor in square.move-dest background
     const css = `
         g line {
             stroke: ${color} !important;
@@ -265,13 +277,13 @@ const injectDynamicCSS = (color, opacity) => {
             visibility: hidden !important;
         }
         square.move-dest {
-            background: radial-gradient(rgba(77,77,77,.5) 19%, rgba(0, 0, 0, 0) 20%) !important;
+            background: radial-gradient(${hexToRgba(moveDestColor, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
         }
         square.selected {
             background-color: ${hexToRgba(color, 0.5)} !important;
         }
         square.premove-dest {
-            background: radial-gradient(rgba(77,77,77,.5) 19%, rgba(0, 0, 0, 0) 20%) !important;
+            background: radial-gradient(${hexToRgba(color, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
         }
         .highlight-overlay {
             border: none;
@@ -295,4 +307,3 @@ const injectDynamicCSS = (color, opacity) => {
 
     document.head.appendChild(style);
 };
-

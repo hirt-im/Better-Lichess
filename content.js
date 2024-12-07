@@ -440,9 +440,9 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     const normalizeCoord = (index) => index - 3.5;
 
     const startX = normalizeCoord(startSquare.col);
-    const startY = -normalizeCoord(startSquare.row); // SVG y-coordinates are flipped
+    const startY = normalizeCoord(startSquare.row); 
     const endX = normalizeCoord(endSquare.col);
-    const endY = -normalizeCoord(endSquare.row);
+    const endY = normalizeCoord(endSquare.row);
 
     // Determine intermediate point for L-shape
     let midX, midY;
@@ -490,7 +490,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     // Append the group to the `.cg-shapes g` container
     container.appendChild(arrowGroup);
 
-    console.log("Arrow drawn with normalized coordinates:", { startX, startY, midX, midY, endX, endY });
+    console.log("knight arrow drawn", container);
 };
 
 

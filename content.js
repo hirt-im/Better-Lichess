@@ -454,12 +454,22 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
         midY = startY;
     }
 
+
+
+    const colToFile = (col) => String.fromCharCode(97 + col); // 'a' = 0, 'b' = 1, ...
+
+    // Calculate start and end square labels (e.g., "b1")
+    const startSquareLabel = `${colToFile(startSquare.col)}${8 - startSquare.row}`; // Flip row for correct chess rank
+    const endSquareLabel = `${colToFile(endSquare.col)}${8 - endSquare.row}`; // Flip row for correct chess rank
+
+    // Generate dynamic cgHash
+    const cgHash = `712,712,${startSquareLabel},${endSquareLabel},green`;
+
     // Create a unique cgHash
 
     // Create the SVG container
     const svgNS = "http://www.w3.org/2000/svg";
     const arrowGroup = document.createElementNS(svgNS, "g");
-    const cgHash = `712,712,b1,b3,green`;
     arrowGroup.setAttribute("cgHash", cgHash); // Add cgHash attribute
     arrowGroup.classList.add("knight-arrow");
 

@@ -211,6 +211,10 @@ const enableSquareHighlighting = () => {
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
             console.log(dragStartSquare);
         }
+
+        if(isKnightOnSquare(getSquareFromEvent(event))){
+            console.log('knight here');
+        }
     });
 
     document.addEventListener("mouseup", (event) => {
@@ -381,4 +385,32 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
     style.textContent = css;
 
     document.head.appendChild(style);
+};
+
+
+
+const isKnightOnSquare = (square) => {
+    const board = document.querySelector("cg-board");
+    if (!board) return false;
+
+    const squareIndex = square.row * 8 + square.col; // Calculate index based on row and column
+    const pieces = board.querySelectorAll("piece");
+
+    // Find the piece on the given square
+    const piece = Array.from(pieces).find((p) => {
+        const transform = p.style.transform;
+        const matches = transform.match(/translate\((\d+)px, (\d+)px\)/);
+        if (!matches) return false;
+
+        const pieceX = parseInt(matches[1], 10);
+        const pieceY = parseInt(matches[2], 10);
+
+        const squareX = square.col * (board.getBoundingClientRect().width / 8);
+        const squareY = square.row * (board.getBoundingClientRect().height / 8);
+
+        return pieceX === squareX && pieceY === squareY;
+    });
+
+    // Check if the piece is a knight
+    return piece && piece.classList.contains("knight");
 };

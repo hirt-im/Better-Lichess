@@ -200,8 +200,8 @@ if (siteButtons) {
 }
 
 
-const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
-    console.log('removing 1')
+const removeArrowFromStartSquare = (startSquare) => {
+    console.log('removing arrows except knight-arrow');
     const board = document.querySelector("cg-board");
     const container = board?.parentElement.querySelector(".cg-shapes g");
     if (!container) return;
@@ -210,26 +210,28 @@ const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
 
     const startX = normalizeCoord(startSquare.col);
     const startY = normalizeCoord(startSquare.row);
-    const endX = normalizeCoord(endSquare.col);
-    const endY = normalizeCoord(endSquare.row);
 
-    // Find and remove the arrow that starts and ends at the specified squares
+    // Find and remove the arrow that starts from the specified square
     container.querySelectorAll("line").forEach((line) => {
-        console.log('check here', startX, startY, endX, endY, line)
+        const parentGroup = line.closest("g"); // Get the parent group of the line
+        if (parentGroup?.classList.contains("knight-arrow")) {
+            console.log("Skipping knight-arrow:", line);
+            return; // Skip lines that belong to a knight-arrow
+        }
+
         const lineStartX = parseFloat(line.getAttribute("x1"));
         const lineStartY = parseFloat(line.getAttribute("y1"));
-        const lineEndX = parseFloat(line.getAttribute("x2"));
-        const lineEndY = parseFloat(line.getAttribute("y2"));
 
-        // Check if the line matches both the start and end square
-        if (lineStartX === startX && lineStartY === startY && lineEndX === endX && lineEndY === endY) {
+        // Check if the line starts from the specified square
+        if (lineStartX === startX && lineStartY === startY) {
             console.log("Removing default arrow:", line);
             line.remove();
         }
     });
 
-    console.log('removing 2')
+    console.log('finished removing arrows');
 };
+
 
 // Square highlighting 
 let dragStartSquare = null; // Track the square where the drag started
@@ -263,8 +265,8 @@ const enableSquareHighlighting = () => {
 
             if (isValidKnightMove){
                 console.log("Drawing knight arrow dynamically");
-                removeArrowFromStartAndEndSquare(dragStartSquare, currentSquare);
-                drawKnightArrow(dragStartSquare, currentSquare); // Draw the knight arrow
+                removeArrowFromStartSquare(dragStartSquare);
+                drawKnightArrow(dragStartSquare, currentSquare); 
             }
         }
     });
@@ -549,6 +551,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
 
     // Create the first segment
     const firstSegment = document.createElementNS(svgNS, "line");
+    firstSegment.classList.add("knight-line");
     firstSegment.setAttribute("x1", startX);
     firstSegment.setAttribute("y1", startY);
     firstSegment.setAttribute("x2", midX);
@@ -561,6 +564,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
 
     // Create the second segment
     const secondSegment = document.createElementNS(svgNS, "line");
+    secondSegment.classList.add("knight-line");
     secondSegment.setAttribute("x1", midX);
     secondSegment.setAttribute("y1", midY);
     secondSegment.setAttribute("x2", endX);

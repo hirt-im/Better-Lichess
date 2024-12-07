@@ -222,7 +222,7 @@ const enableSquareHighlighting = () => {
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
         const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
         console.log('this', dragStartSquare, endSquare);
-        if(isKnightOnSquare(dragStartSquare) && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)){
+        if(event.button === 2 && isKnightOnSquare(dragStartSquare) && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)){
             console.log('drawing knight arrow')
             drawKnightArrow(dragStartSquare, endSquare);
         }
@@ -471,7 +471,8 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     firstSegment.setAttribute("y2", midY);
     firstSegment.setAttribute("stroke", color);
     firstSegment.setAttribute("stroke-width", 0.15625); // Match default arrow width
-    firstSegment.setAttribute("marker-end", "url(#arrowhead-g)");
+    firstSegment.setAttribute("opacity", 1);
+    firstSegment.setAttribute("marker-end", "none");
 
     // Create the second segment
     const secondSegment = document.createElementNS(svgNS, "line");
@@ -481,6 +482,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     secondSegment.setAttribute("y2", endY);
     secondSegment.setAttribute("stroke", color);
     secondSegment.setAttribute("stroke-width", 0.15625); // Match default arrow width
+    secondSegment.setAttribute("opacity", 1);
     secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
 
     // Append segments to the group
@@ -489,21 +491,8 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
 
     // Append the group to the `.cg-shapes g` container
     container.appendChild(arrowGroup);
-
-    console.log("knight arrow drawn", container);
+    console.log('knight arrow:', arrowGroup);
+    console.log("container: ", container);
 };
 
 
-
-const tempElement = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-tempElement.setAttribute("cx", "0");
-tempElement.setAttribute("cy", "0");
-tempElement.setAttribute("r", "0.5");
-tempElement.setAttribute("fill", "red");
-
-const container = document.querySelector(".cg-custom-svgs g");
-container.appendChild(tempElement);
-
-setTimeout(() => {
-    console.log("Is tempElement still there?", container.contains(tempElement));
-}, 2000);

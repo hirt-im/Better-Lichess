@@ -91,6 +91,16 @@ if (siteButtons) {
 
     document.body.appendChild(extensionMenu);
 
+    document.addEventListener('click', (event) => {
+        const isClickInsideMenu = extensionMenu.contains(event.target);
+        const isClickOnButton = extensionBtn.contains(event.target);
+    
+        // If the click is outside the menu and not on the button, hide the menu
+        if (!isClickInsideMenu && !isClickOnButton) {
+            extensionMenu.style.display = 'none';
+        }
+    });
+
     // Toggle menu on click
     extensionBtn.addEventListener('click', () => {
         extensionMenu.style.display = (extensionMenu.style.display === 'none') ? 'block' : 'none';

@@ -220,9 +220,14 @@ const enableSquareHighlighting = () => {
     document.addEventListener("mouseup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+        const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
+        console.log('this', dragStartSquare, endSquare);
+        if(isKnightOnSquare(dragStartSquare) && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)){
+            console.log('drawing knight arrow')
+            drawKnightArrow(dragStartSquare, endSquare);
+        }
 
         if (event.button === 2) { 
-            const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
             console.log(dragStartSquare, endSquare);
             if (dragStartSquare && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)) {
                 // Do not highlight if the drag ended on a different square
@@ -230,6 +235,7 @@ const enableSquareHighlighting = () => {
             }
             toggleSquareHighlight(event); // Highlight the square if it's the same as the starting square
         }
+       
         dragStartSquare = null;
     });
 
@@ -413,4 +419,63 @@ const isKnightOnSquare = (square) => {
 
     // Check if the piece is a knight
     return piece && piece.classList.contains("knight");
+};
+
+
+
+
+const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
+    const board = document.querySelector("cg-board");
+    if (!board) return;
+
+    const rect = board.getBoundingClientRect();
+    const squareSize = rect.width / 8;
+
+    // Convert square positions to pixel positions
+    const startX = startSquare.col * squareSize + squareSize / 2;
+    const startY = startSquare.row * squareSize + squareSize / 2;
+    const endX = endSquare.col * squareSize + squareSize / 2;
+    const endY = endSquare.row * squareSize + squareSize / 2;
+
+    // Determine intermediate point for L-shape
+    let midX, midY;
+    if (Math.abs(startSquare.row - endSquare.row) === 2) {
+        midX = startX;
+        midY = endY;
+    } else {
+        midX = endX;
+        midY = startY;
+    }
+
+    // Create the SVG container
+    const svgNS = "http://www.w3.org/2000/svg";
+    const arrowGroup = document.createElementNS(svgNS, "g");
+    arrowGroup.classList.add("knight-arrow");
+
+    // Create the first segment
+    const firstSegment = document.createElementNS(svgNS, "line");
+    firstSegment.setAttribute("x1", startX);
+    firstSegment.setAttribute("y1", startY);
+    firstSegment.setAttribute("x2", midX);
+    firstSegment.setAttribute("y2", midY);
+    firstSegment.setAttribute("stroke", color);
+    firstSegment.setAttribute("stroke-width", 4);
+    firstSegment.setAttribute("marker-end", "url(#arrowhead)");
+
+    // Create the second segment
+    const secondSegment = document.createElementNS(svgNS, "line");
+    secondSegment.setAttribute("x1", midX);
+    secondSegment.setAttribute("y1", midY);
+    secondSegment.setAttribute("x2", endX);
+    secondSegment.setAttribute("y2", endY);
+    secondSegment.setAttribute("stroke", color);
+    secondSegment.setAttribute("stroke-width", 4);
+    secondSegment.setAttribute("marker-end", "url(#arrowhead)");
+
+    // Append segments to the group
+    arrowGroup.appendChild(firstSegment);
+    arrowGroup.appendChild(secondSegment);
+
+    // Append the group to the board
+    board.querySelector(".cg-container").appendChild(arrowGroup);
 };

@@ -2,7 +2,7 @@ const DEFAULT_COLOR = "#f2c218";
 const DEFAULT_OPACITY = 1.0;
 const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; 
 const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; 
-const DEFAULT_SELECTED_COLOR = "#f2c218"; 
+const DEFAULT_SELECTED_COLOR = "#99d8ff"; 
 
 // Extension button and menu
 const siteButtons = document.querySelector('.site-buttons');

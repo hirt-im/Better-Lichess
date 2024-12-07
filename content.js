@@ -221,23 +221,41 @@ const enableSquareHighlighting = () => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
         const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
-        console.log('this', dragStartSquare, endSquare);
-        if(event.button === 2 && isKnightOnSquare(dragStartSquare) && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)){
-            console.log('drawing knight arrow')
-            drawKnightArrow(dragStartSquare, endSquare);
+    
+        if (dragStartSquare) {
+            const rowDifference = Math.abs(dragStartSquare.row - endSquare.row);
+            const colDifference = Math.abs(dragStartSquare.col - endSquare.col);
+    
+            const isValidKnightMove = 
+                (rowDifference === 2 && colDifference === 1) || 
+                (rowDifference === 1 && colDifference === 2);
+    
+            if (
+                event.button === 2 && // Right mouse button
+                isKnightOnSquare(dragStartSquare) && // Check if a knight is on the start square
+                isValidKnightMove // Ensure the move is valid for a knight
+            ) {
+                console.log("Drawing knight arrow");
+                drawKnightArrow(dragStartSquare, endSquare);
+            }
         }
-
-        if (event.button === 2) { 
+    
+        if (event.button === 2) {
             console.log(dragStartSquare, endSquare);
-            if (dragStartSquare && (dragStartSquare.row !== endSquare.row || dragStartSquare.col !== endSquare.col)) {
+            if (
+                dragStartSquare &&
+                (dragStartSquare.row !== endSquare.row ||
+                    dragStartSquare.col !== endSquare.col)
+            ) {
                 // Do not highlight if the drag ended on a different square
                 return;
             }
             toggleSquareHighlight(event); // Highlight the square if it's the same as the starting square
         }
-       
+    
         dragStartSquare = null;
     });
+    
 
     // Add a left-click event listener to clear all highlights
     document.addEventListener("click", (event) => {

@@ -201,6 +201,7 @@ if (siteButtons) {
 
 
 const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
+    console.log('removing 1')
     const board = document.querySelector("cg-board");
     const container = board?.parentElement.querySelector(".cg-shapes g");
     if (!container) return;
@@ -214,6 +215,7 @@ const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
 
     // Find and remove the arrow that starts and ends at the specified squares
     container.querySelectorAll("line").forEach((line) => {
+        console.log('check here', startX, startY, endX, endY, line)
         const lineStartX = parseFloat(line.getAttribute("x1"));
         const lineStartY = parseFloat(line.getAttribute("y1"));
         const lineEndX = parseFloat(line.getAttribute("x2"));
@@ -225,95 +227,91 @@ const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
             line.remove();
         }
     });
+
+    console.log('removing 2')
 };
 
 // Square highlighting 
 let dragStartSquare = null; // Track the square where the drag started
 const enableSquareHighlighting = () => {
+    let isRightMouseDown = false; // Track the state of the right mouse button
+
     document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return; 
-        console.log('here', event.button)
+        if (!board || !board.contains(event.target)) return;
 
         if (event.button === 2) { // Right mouse button
+            isRightMouseDown = true; // Set the flag to true
             dragStartSquare = getSquareFromEvent(event); // Record the starting square
-            console.log(dragStartSquare);
+            console.log("Drag start square:", dragStartSquare);
         }
+    });
 
-        if(isKnightOnSquare(getSquareFromEvent(event))){
-            console.log('knight here');
+    document.addEventListener("mousemove", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (isRightMouseDown && dragStartSquare && isKnightOnSquare(dragStartSquare)) {
+            const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
+
+            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
+            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
+
+            const isValidKnightMove =
+                (rowDifference === 2 && colDifference === 1) ||
+                (rowDifference === 1 && colDifference === 2);
+
+            if (isValidKnightMove){
+                console.log("Drawing knight arrow dynamically");
+                removeArrowFromStartAndEndSquare(dragStartSquare, currentSquare);
+                drawKnightArrow(dragStartSquare, currentSquare); // Draw the knight arrow
+            }
         }
     });
 
     document.addEventListener("mouseup", (event) => {
         const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
+        if (!board || !board.contains(event.target)) return;
+
         const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
-    
-        if (dragStartSquare) {
+
+        if (isRightMouseDown && dragStartSquare) {
             const rowDifference = Math.abs(dragStartSquare.row - endSquare.row);
             const colDifference = Math.abs(dragStartSquare.col - endSquare.col);
-    
-            const isValidKnightMove = 
-                (rowDifference === 2 && colDifference === 1) || 
+
+            const isValidKnightMove =
+                (rowDifference === 2 && colDifference === 1) ||
                 (rowDifference === 1 && colDifference === 2);
-    
+
             if (
                 event.button === 2 && // Right mouse button
                 isKnightOnSquare(dragStartSquare) && // Check if a knight is on the start square
                 isValidKnightMove // Ensure the move is valid for a knight
             ) {
-                console.log("Drawing knight arrow");
+                console.log("Drawing knight arrow on mouseup");
                 drawKnightArrow(dragStartSquare, endSquare);
             }
         }
-    
+
         if (event.button === 2) {
-            console.log(dragStartSquare, endSquare);
+            console.log("End drag:", dragStartSquare, endSquare);
+
+            // Highlight the square if the drag ended on the same square
             if (
-                dragStartSquare &&
-                (dragStartSquare.row !== endSquare.row ||
-                    dragStartSquare.col !== endSquare.col)
+                dragStartSquare.row === endSquare.row &&
+                dragStartSquare.col === endSquare.col
             ) {
-                // Do not highlight if the drag ended on a different square
-                return;
+                toggleSquareHighlight(event);
             }
-            toggleSquareHighlight(event); // Highlight the square if it's the same as the starting square
         }
     
-        dragStartSquare = null;
+
+        // Reset drag state when the right mouse button is released
+        if (event.button === 2) {
+            isRightMouseDown = false;
+            dragStartSquare = null;
+        }
     });
-
-    
-document.addEventListener("mousemove", (event) => {
-    const board = document.querySelector("cg-board");
-    if (!board || !board.contains(event.target)) return;
-
-    if (dragStartSquare) {
-        const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
-
-        const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
-        const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
-
-        const isValidKnightMove =
-            (rowDifference === 2 && colDifference === 1) ||
-            (rowDifference === 1 && colDifference === 2);
-
-        if (
-            isKnightOnSquare(dragStartSquare) && // Ensure there's a knight on the starting square
-            isValidKnightMove // Ensure the current square is a valid knight move
-        ) {
-            console.log("Drawing knight arrow dynamically");
-
-            // Remove the default arrow being drawn
-            removeArrowFromStartAndEndSquare(dragStartSquare, currentSquare);
-
-            // Draw the knight arrow
-            drawKnightArrow(dragStartSquare, currentSquare);
-        }
-    }
-});
-    
 
     // Add a left-click event listener to clear all highlights
     document.addEventListener("click", (event) => {

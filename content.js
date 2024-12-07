@@ -425,17 +425,27 @@ const isKnightOnSquare = (square) => {
 
 
 const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
+    console.log('drawing knight arrow here')
     const board = document.querySelector("cg-board");
-    if (!board) return;
+    if (!board) {
+        console.error("Chessboard not found.");
+        return;
+    }
+
+    const container = board.parentElement.querySelector(".cg-shapes g");
+    if (!container) {
+        console.error("Custom SVG container not found.");
+        return;
+    }
 
     const rect = board.getBoundingClientRect();
     const squareSize = rect.width / 8;
 
     // Convert square positions to pixel positions
-    const startX = startSquare.col * squareSize + squareSize / 2;
-    const startY = startSquare.row * squareSize + squareSize / 2;
-    const endX = endSquare.col * squareSize + squareSize / 2;
-    const endY = endSquare.row * squareSize + squareSize / 2;
+    const startX = startSquare.col * squareSize + squareSize / 2 - rect.width / 2;
+    const startY = -(startSquare.row * squareSize + squareSize / 2 - rect.height / 2);
+    const endX = endSquare.col * squareSize + squareSize / 2 - rect.width / 2;
+    const endY = -(endSquare.row * squareSize + squareSize / 2 - rect.height / 2);
 
     // Determine intermediate point for L-shape
     let midX, midY;
@@ -451,6 +461,9 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     const svgNS = "http://www.w3.org/2000/svg";
     const arrowGroup = document.createElementNS(svgNS, "g");
     arrowGroup.classList.add("knight-arrow");
+    const cgHash = `712,712,b1,b3,green`;
+    arrowGroup.setAttribute("cgHash", cgHash); // Add cgHash attribute
+
 
     // Create the first segment
     const firstSegment = document.createElementNS(svgNS, "line");
@@ -459,8 +472,8 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     firstSegment.setAttribute("x2", midX);
     firstSegment.setAttribute("y2", midY);
     firstSegment.setAttribute("stroke", color);
-    firstSegment.setAttribute("stroke-width", 4);
-    firstSegment.setAttribute("marker-end", "url(#arrowhead)");
+    firstSegment.setAttribute("stroke-width", 0.2);
+    firstSegment.setAttribute("marker-end", "url(#arrowhead-g)");
 
     // Create the second segment
     const secondSegment = document.createElementNS(svgNS, "line");
@@ -469,13 +482,30 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     secondSegment.setAttribute("x2", endX);
     secondSegment.setAttribute("y2", endY);
     secondSegment.setAttribute("stroke", color);
-    secondSegment.setAttribute("stroke-width", 4);
-    secondSegment.setAttribute("marker-end", "url(#arrowhead)");
+    secondSegment.setAttribute("stroke-width", 0.2);
+    secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
 
     // Append segments to the group
     arrowGroup.appendChild(firstSegment);
     arrowGroup.appendChild(secondSegment);
 
-    // Append the group to the board
-    board.querySelector(".cg-container").appendChild(arrowGroup);
+    // Append the group to the custom SVG container
+    console.log('prev container:', container); 
+    container.appendChild(arrowGroup);
+    console.log('Arrow group appended:', arrowGroup); // Confirm arrowGroup is appended
+    console.log('Updated container:', container); 
 };
+
+
+const tempElement = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+tempElement.setAttribute("cx", "0");
+tempElement.setAttribute("cy", "0");
+tempElement.setAttribute("r", "0.5");
+tempElement.setAttribute("fill", "red");
+
+const container = document.querySelector(".cg-custom-svgs g");
+container.appendChild(tempElement);
+
+setTimeout(() => {
+    console.log("Is tempElement still there?", container.contains(tempElement));
+}, 2000);

@@ -483,6 +483,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     firstSegment.setAttribute("stroke-width", 0.15625); // Match default arrow width
     firstSegment.setAttribute("opacity", 1);
     firstSegment.setAttribute("marker-end", "none");
+    firstSegment.setAttribute("stroke-linecap", "square");
 
     // Create the second segment
     const secondSegment = document.createElementNS(svgNS, "line");

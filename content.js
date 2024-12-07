@@ -199,6 +199,34 @@ if (siteButtons) {
     });
 }
 
+
+const removeArrowFromStartAndEndSquare = (startSquare, endSquare) => {
+    const board = document.querySelector("cg-board");
+    const container = board?.parentElement.querySelector(".cg-shapes g");
+    if (!container) return;
+
+    const normalizeCoord = (index) => index - 3.5;
+
+    const startX = normalizeCoord(startSquare.col);
+    const startY = normalizeCoord(startSquare.row);
+    const endX = normalizeCoord(endSquare.col);
+    const endY = normalizeCoord(endSquare.row);
+
+    // Find and remove the arrow that starts and ends at the specified squares
+    container.querySelectorAll("line").forEach((line) => {
+        const lineStartX = parseFloat(line.getAttribute("x1"));
+        const lineStartY = parseFloat(line.getAttribute("y1"));
+        const lineEndX = parseFloat(line.getAttribute("x2"));
+        const lineEndY = parseFloat(line.getAttribute("y2"));
+
+        // Check if the line matches both the start and end square
+        if (lineStartX === startX && lineStartY === startY && lineEndX === endX && lineEndY === endY) {
+            console.log("Removing default arrow:", line);
+            line.remove();
+        }
+    });
+};
+
 // Square highlighting 
 let dragStartSquare = null; // Track the square where the drag started
 const enableSquareHighlighting = () => {
@@ -255,6 +283,36 @@ const enableSquareHighlighting = () => {
     
         dragStartSquare = null;
     });
+
+    
+document.addEventListener("mousemove", (event) => {
+    const board = document.querySelector("cg-board");
+    if (!board || !board.contains(event.target)) return;
+
+    if (dragStartSquare) {
+        const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
+
+        const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
+        const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
+
+        const isValidKnightMove =
+            (rowDifference === 2 && colDifference === 1) ||
+            (rowDifference === 1 && colDifference === 2);
+
+        if (
+            isKnightOnSquare(dragStartSquare) && // Ensure there's a knight on the starting square
+            isValidKnightMove // Ensure the current square is a valid knight move
+        ) {
+            console.log("Drawing knight arrow dynamically");
+
+            // Remove the default arrow being drawn
+            removeArrowFromStartAndEndSquare(dragStartSquare, currentSquare);
+
+            // Draw the knight arrow
+            drawKnightArrow(dragStartSquare, currentSquare);
+        }
+    }
+});
     
 
     // Add a left-click event listener to clear all highlights

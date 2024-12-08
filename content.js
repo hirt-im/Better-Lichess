@@ -411,6 +411,7 @@ const getSquareFromEvent = (event) => {
         // Flip row and column for black orientation
         row = 7 - row;
         col = 7 - col;
+        console.log('is it black?',isOrientationBlack())
     }
 
     return { row, col };

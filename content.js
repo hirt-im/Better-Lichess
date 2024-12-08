@@ -216,6 +216,7 @@ if (siteButtons) {
 const removeArrowFromStartSquare = (startSquare) => {
     console.log('removing arrows except knight-arrow');
     const board = document.querySelector("cg-board");
+    console.log('board', board);
     const container = board?.parentElement.querySelector(".cg-shapes g");
     if (!container) return;
 
@@ -266,7 +267,13 @@ const enableSquareHighlighting = () => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 
+        if (isRightMouseDown && dragStartSquare && isKnightOnSquare(dragStartSquare)){
+            console.log('puzzle test')
+
+        }
+
         if (isRightMouseDown && dragStartSquare && isKnightOnSquare(dragStartSquare)) {
+            console.log('puzzle drawing valid knight');
             const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
 
             const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
@@ -289,7 +296,7 @@ const enableSquareHighlighting = () => {
         if (!board || !board.contains(event.target)) return;
 
         const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
-
+        console.log('dragstart', dragStartSquare);
         if (isRightMouseDown && dragStartSquare) {
             const rowDifference = Math.abs(dragStartSquare.row - endSquare.row);
             const colDifference = Math.abs(dragStartSquare.col - endSquare.col);
@@ -499,11 +506,14 @@ const isKnightOnSquare = (square) => {
     const board = document.querySelector("cg-board");
     if (!board) return false;
 
+    console.log('puzzle checking if knight on square')
+
     const squareIndex = square.row * 8 + square.col; // Calculate index based on row and column
     const pieces = board.querySelectorAll("piece");
 
     // Find the piece on the given square
     const piece = Array.from(pieces).find((p) => {
+        console.log(p);
         const transform = p.style.transform;
         const matches = transform.match(/translate\((\d+)px, (\d+)px\)/);
         if (!matches) return false;
@@ -513,9 +523,10 @@ const isKnightOnSquare = (square) => {
 
         const squareX = square.col * (board.getBoundingClientRect().width / 8);
         const squareY = square.row * (board.getBoundingClientRect().height / 8);
-
+        console.log('puzzle here', pieceX, squareX, pieceY, squareY)
         return pieceX === squareX && pieceY === squareY;
     });
+    console.log('found piece:', piece)
 
     // Check if the piece is a knight
     return piece && piece.classList.contains("knight");

@@ -210,13 +210,16 @@ if (siteButtons) {
 }
 
 
+
+
+
 const removeArrowFromStartSquare = (startSquare) => {
     console.log('removing arrows except knight-arrow');
     const board = document.querySelector("cg-board");
     const container = board?.parentElement.querySelector(".cg-shapes g");
     if (!container) return;
 
-    const normalizeCoord = (index) => index - 3.5;
+    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
 
     const startX = normalizeCoord(startSquare.col);
     const startY = normalizeCoord(startSquare.row);
@@ -379,6 +382,12 @@ const toggleSquareHighlight = (event) => {
     }
 };
 
+
+const isOrientationBlack = () => {
+    const boardContainer = document.querySelector(".cg-wrap");
+    return boardContainer?.classList.contains("orientation-black");
+};
+
 const getSquareFromEvent = (event) => {
     const board = document.querySelector("cg-board");
     if (!board) return null;
@@ -387,10 +396,15 @@ const getSquareFromEvent = (event) => {
     const x = event.clientX - rect.left; // X position relative to the board
     const y = event.clientY - rect.top;  // Y position relative to the board
 
-    // Calculate the square size and the row/column
     const squareSize = rect.width / 8; // Assuming an 8x8 grid
-    const col = Math.floor(x / squareSize);
-    const row = Math.floor(y / squareSize);
+    let col = Math.floor(x / squareSize);
+    let row = Math.floor(y / squareSize);
+
+    if (isOrientationBlack()) {
+        // Flip row and column for black orientation
+        row = 7 - row;
+        col = 7 - col;
+    }
 
     return { row, col };
 };
@@ -523,7 +537,7 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     }
 
     // Normalize the row and column to SVG coordinates (-4 to 4)
-    const normalizeCoord = (index) => index - 3.5;
+    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
 
     const startX = normalizeCoord(startSquare.col);
     const startY = normalizeCoord(startSquare.row); 

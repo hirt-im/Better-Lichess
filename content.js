@@ -305,6 +305,10 @@ const enableSquareHighlighting = () => {
                 (rowDifference === 2 && colDifference === 1) ||
                 (rowDifference === 1 && colDifference === 2);
 
+            if (event.button === 2 && isKnightOnSquare(dragStartSquare)){
+                console.log('test1');
+            }
+
             if (
                 event.button === 2 && // Right mouse button
                 isKnightOnSquare(dragStartSquare) && // Check if a knight is on the start square
@@ -411,7 +415,6 @@ const getSquareFromEvent = (event) => {
         // Flip row and column for black orientation
         row = 7 - row;
         col = 7 - col;
-        console.log('is it black?',isOrientationBlack())
     }
 
     return { row, col };
@@ -504,33 +507,79 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
 
 
 const isKnightOnSquare = (square) => {
-    const board = document.querySelector("cg-board");
-    if (!board) return false;
+    // Select all cg-board elements to ensure the correct board is targeted
+    const boards = document.querySelectorAll("cg-board");
+    if (boards.length === 0) {
+        console.warn("No cg-board elements found.");
+        return false;
+    }
 
-    console.log('puzzle checking if knight on square')
+    // Iterate through each board to find the knight
+    for (const board of boards) {
+        // Determine board orientation
+        const boardContainer = board.closest(".cg-wrap");
+        const isBlackOrientation = boardContainer?.classList.contains("orientation-black") || false;
 
-    const squareIndex = square.row * 8 + square.col; // Calculate index based on row and column
-    const pieces = board.querySelectorAll("piece");
+        // Select all pieces that include 'knight' in their class list
+        const knightPieces = board.querySelectorAll("piece[class*='knight']");
+        if (knightPieces.length === 0) {
+            console.warn("No knight pieces found on this board.");
+            continue; // Move to the next board if no knights are present
+        }
 
-    // Find the piece on the given square
-    const piece = Array.from(pieces).find((p) => {
-        console.log(p);
-        const transform = p.style.transform;
-        const matches = transform.match(/translate\((\d+)px, (\d+)px\)/);
-        if (!matches) return false;
+        // Get board dimensions
+        const boardRect = board.getBoundingClientRect();
+        const squareWidth = boardRect.width / 8;
+        const squareHeight = boardRect.height / 8;
 
-        const pieceX = parseInt(matches[1], 10);
-        const pieceY = parseInt(matches[2], 10);
+        // Define a threshold for approximate matching (e.g., ±5px)
+        const threshold = 5;
 
-        const squareX = square.col * (board.getBoundingClientRect().width / 8);
-        const squareY = square.row * (board.getBoundingClientRect().height / 8);
-        console.log('puzzle here', pieceX, squareX, pieceY, squareY)
-        return pieceX === squareX && pieceY === squareY;
-    });
-    console.log('found piece:', piece)
+        // Calculate expected square position based on orientation
+        let expectedX = square.col * squareWidth;
+        let expectedY = square.row * squareHeight;
 
-    // Check if the piece is a knight
-    return piece && piece.classList.contains("knight");
+        if (isBlackOrientation) {
+            // Flip coordinates for black orientation
+            expectedX = (7 - square.col) * squareWidth;
+            expectedY = (7 - square.row) * squareHeight;
+        }
+
+        // Iterate through all knight pieces to find a match
+        for (const piece of knightPieces) {
+            const transform = piece.style.transform;
+            if (!transform) {
+                console.warn("Knight piece without transform style:", piece);
+                continue;
+            }
+
+            // Match translate(xpx, ypx) with possible decimal values and optional spaces
+            const matches = transform.match(/translate\(([\d.]+)px,\s*([\d.]+)px\)/);
+            if (!matches) {
+                console.warn("Transform style does not match expected format:", transform);
+                continue;
+            }
+
+            const pieceX = parseFloat(matches[1]);
+            const pieceY = parseFloat(matches[2]);
+
+            // Check if the piece is within the threshold of the expected square
+            const xMatch = Math.abs(pieceX - expectedX) <= threshold;
+            const yMatch = Math.abs(pieceY - expectedY) <= threshold;
+
+            // Debug logs for verification
+            console.log(`Checking piece at (${pieceX}, ${pieceY}) against expected (${expectedX}, ${expectedY})`);
+            console.log(`X Match: ${xMatch}, Y Match: ${yMatch}`);
+
+            if (xMatch && yMatch) {
+                console.log("Knight found on the specified square.");
+                return true;
+            }
+        }
+    }
+
+    console.log("No knight found on the specified square.");
+    return false;
 };
 
 

@@ -669,34 +669,3 @@ const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
     console.log("container: ", container);
 };
 
-
-const observer = new MutationObserver((mutationsList, observer) => {
-    // Select the <g> element inside the SVG with class "cg-shapes"
-    const targetG = document.querySelector('.cg-custom-svgs > g');
-    
-    // If the <g> element doesn't exist yet, exit early
-    if (!targetG) return;
-
-    mutationsList.forEach(mutation => {
-        if (mutation.type === 'childList') {
-            // Handle added nodes
-            mutation.addedNodes.forEach(node => {
-                if (targetG.contains(node)) {
-                    console.log('A child node has been added to the <g> element:', node);
-                    // Add your additional logic here
-                }
-            });
-
-            // Handle removed nodes
-            mutation.removedNodes.forEach(node => {
-                if (targetG.contains(node)) {
-                    console.log('A child node has been removed from the <g> element:', node);
-                    // Add your additional logic here
-                }
-            });
-        }
-    });
-});
-
-// Start observing the entire document body for child list changes and subtree modifications
-observer.observe(document.body, { childList: true, subtree: true });

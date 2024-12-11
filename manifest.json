@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Better Lichess",
   "version": "1.0",
-  "description": "Changes drawable arrows, square highlighting, and move destination dots on Lichess. Arrow color and opacity can be customized.",
+  "description": "Adds proper knight arrows, better square highlighting, and drawable element customization.",
   "permissions": ["scripting", "storage"],
   "host_permissions": ["https://lichess.org/*"],
   "content_scripts": [

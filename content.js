@@ -272,7 +272,7 @@ const enableSquareHighlighting = () => {
 
         }
 
-        if (isRightMouseDown && dragStartSquare && isKnightOnSquare(dragStartSquare)) {
+        if (isRightMouseDown && dragStartSquare) {
             console.log('puzzle drawing valid knight');
             const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
 

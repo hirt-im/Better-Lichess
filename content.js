@@ -331,7 +331,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     secondSegment.setAttribute("y2", endY);
     secondSegment.setAttribute("stroke", color);
     secondSegment.setAttribute("stroke-width", 0.165);
-    secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
+    secondSegment.setAttribute("marker-end", "url(#custom)");
 
     arrowGroup.appendChild(firstSegment);
     arrowGroup.appendChild(secondSegment);
@@ -358,7 +358,7 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("y2", endY);
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
-    line.setAttribute("marker-end", "url(#arrowhead-g)");
+    line.setAttribute("marker-end", "url(#custom)");
     line.setAttribute("stroke-linecap", "butt");
 
     arrowGroup.appendChild(line);
@@ -366,18 +366,6 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     return arrowGroup;
 };
 
-chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
-    const savedColor = data.arrowColor || DEFAULT_COLOR;
-    const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
-    const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
-    const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
-    const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
-
-    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor, savedSelectedSquareColor);
-
-    enableSquareHighlighting(); 
-    setupArrowDrawing();
-});
 
 chrome.storage.onChanged.addListener((changes) => {
     chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
@@ -443,6 +431,15 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
 
         .cg-shapes g[cgHash*="paleBlue"] line {
             visibility: visible !important;
+        }
+
+        .cg-shapes g[cgHash*="paleBlue"] line {
+            stroke: ${selectedSquareColor} !important;
+            fill: ${selectedSquareColor} !important;
+        }
+
+        marker#arrowhead-pb path {
+            fill: ${selectedSquareColor} !important;
         }
 
         
@@ -714,3 +711,53 @@ const enableSquareHighlighting = () => {
     });
 };
 
+function setCustomMarker() {
+    // Ensure we are dealing with the correct namespace
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svgElement = document.querySelector('.cg-shapes');
+    // Locate or create a <defs> section in the SVG
+    let defs = svgElement.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS(svgNS, 'defs');
+      svgElement.insertBefore(defs, svgElement.firstChild);
+    }
+  
+    // Create a new <marker> element
+    const marker = document.createElementNS(svgNS, 'marker');
+    marker.setAttribute('id', 'custom');
+    marker.setAttribute('orient', 'auto');
+    marker.setAttribute('overflow', 'visible');
+    marker.setAttribute('markerWidth', '4');
+    marker.setAttribute('markerHeight', '4');
+    marker.setAttribute('refX', '2.05');
+    marker.setAttribute('refY', '2');
+  
+    // Create the <path> element for the marker shape
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M0,0 V4 L3,2 Z');
+    path.setAttribute('fill', arrowColor);
+  
+    // Append the path to the marker
+    marker.appendChild(path);
+  
+    // Append the new marker to the <defs> section
+    defs.appendChild(marker);
+  }
+  
+
+
+
+
+chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
+    const savedColor = data.arrowColor || DEFAULT_COLOR;
+    const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
+    const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
+    const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
+    const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
+
+    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor, savedSelectedSquareColor);
+
+    setCustomMarker();
+    enableSquareHighlighting(); 
+    setupArrowDrawing();
+});

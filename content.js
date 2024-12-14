@@ -135,7 +135,9 @@ if (siteButtons) {
         document.getElementById('selectedSquareColorCircle').style.backgroundColor = savedSelectedSquareColor;
 
         opacitySlider.value = savedOpacity;
-        opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
+        if (opacityValueDisplay) {
+            opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
+        }
     });
 
     // Show color picker when the circles are clicked
@@ -197,7 +199,9 @@ if (siteButtons) {
             document.getElementById('selectedSquareColorCircle').style.backgroundColor = DEFAULT_SELECTED_COLOR;
 
             opacitySlider.value = DEFAULT_OPACITY;
-            opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
+            if (opacityValueDisplay) {
+                opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
+            }
             console.log("Arrow settings reset to default:", { 
                 color: DEFAULT_COLOR, 
                 opacity: DEFAULT_OPACITY, 
@@ -210,190 +214,7 @@ if (siteButtons) {
 }
 
 
-
-
-
-const removeArrowFromStartSquare = (startSquare) => {
-    console.log('removing arrows except knight-arrow');
-    const board = document.querySelector("cg-board");
-    console.log('board', board);
-    const container = board?.parentElement.querySelector(".cg-shapes g");
-    if (!container) return;
-
-    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
-
-    const startX = normalizeCoord(startSquare.col);
-    const startY = normalizeCoord(startSquare.row);
-
-    // Find and remove the arrow that starts from the specified square
-    container.querySelectorAll("line").forEach((line) => {
-        const parentGroup = line.closest("g"); // Get the parent group of the line
-        if (parentGroup?.classList.contains("knight-arrow")) {
-            console.log("Skipping knight-arrow:", line);
-            return; // Skip lines that belong to a knight-arrow
-        }
-
-        const lineStartX = parseFloat(line.getAttribute("x1"));
-        const lineStartY = parseFloat(line.getAttribute("y1"));
-
-        // Check if the line starts from the specified square
-        if (lineStartX === startX && lineStartY === startY) {
-            console.log("Removing default arrow:", line);
-            line.remove();
-        }
-    });
-
-    console.log('finished removing arrows');
-};
-
-
-// Square highlighting 
-let dragStartSquare = null; // Track the square where the drag started
-const enableSquareHighlighting = () => {
-    let isRightMouseDown = false; // Track the state of the right mouse button
-
-    document.addEventListener("pointerdown", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return;
-
-        if (event.button === 2) { // Right mouse button
-            isRightMouseDown = true; // Set the flag to true
-            dragStartSquare = getSquareFromEvent(event); // Record the starting square
-            console.log("Drag start square:", dragStartSquare);
-        }
-    });
-
-    document.addEventListener("mousemove", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return;
-
-        if (isRightMouseDown && dragStartSquare && isKnightOnSquare(dragStartSquare)){
-            console.log('puzzle test')
-
-        }
-
-        if (isRightMouseDown && dragStartSquare) {
-            console.log('puzzle drawing valid knight');
-            const currentSquare = getSquareFromEvent(event); // Track the square under the mouse
-
-            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
-            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
-
-            const isValidKnightMove =
-                (rowDifference === 2 && colDifference === 1) ||
-                (rowDifference === 1 && colDifference === 2);
-
-            if (isValidKnightMove){
-                console.log("Drawing knight arrow dynamically");
-                removeArrowFromStartSquare(dragStartSquare);
-                drawKnightArrow(dragStartSquare, currentSquare); 
-            }
-        }
-    });
-
-    document.addEventListener("mouseup", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return;
-
-        const endSquare = getSquareFromEvent(event); // Get the square where the drag ended
-        console.log('dragstart', dragStartSquare);
-        if (isRightMouseDown && dragStartSquare) {
-            const rowDifference = Math.abs(dragStartSquare.row - endSquare.row);
-            const colDifference = Math.abs(dragStartSquare.col - endSquare.col);
-
-            const isValidKnightMove =
-                (rowDifference === 2 && colDifference === 1) ||
-                (rowDifference === 1 && colDifference === 2);
-
-            if (event.button === 2 && isKnightOnSquare(dragStartSquare)){
-                console.log('test1');
-            }
-
-            if (
-                event.button === 2 && // Right mouse button
-                isKnightOnSquare(dragStartSquare) && // Check if a knight is on the start square
-                isValidKnightMove // Ensure the move is valid for a knight
-            ) {
-                console.log("Drawing knight arrow on mouseup");
-                drawKnightArrow(dragStartSquare, endSquare);
-            }
-        }
-
-        if (event.button === 2) {
-            console.log("End drag:", dragStartSquare, endSquare);
-
-            // Highlight the square if the drag ended on the same square
-            if (
-                dragStartSquare.row === endSquare.row &&
-                dragStartSquare.col === endSquare.col
-            ) {
-                toggleSquareHighlight(event);
-            }
-        }
-    
-
-        // Reset drag state when the right mouse button is released
-        if (event.button === 2) {
-            isRightMouseDown = false;
-            dragStartSquare = null;
-        }
-    });
-
-    // Add a left-click event listener to clear all highlights
-    document.addEventListener("click", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return; // Only proceed if the event is on the chessboard
-
-        // Remove all highlight overlays
-        board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
-    });
-
-    document.addEventListener("contextmenu", (event) => {
-        const board = document.querySelector("cg-board");
-        if (board && board.contains(event.target)) {
-            event.preventDefault(); // Prevent the default context menu only on the chessboard
-        }
-    });
-};
-
-const toggleSquareHighlight = (event) => {
-    const board = document.querySelector("cg-board");
-    if (!board) return;
-
-    const rect = board.getBoundingClientRect();
-    const x = event.clientX - rect.left; // X position relative to the board
-    const y = event.clientY - rect.top;  // Y position relative to the board
-
-    const squareSize = rect.width / 8; // Assuming an 8x8 grid
-    const col = Math.floor(x / squareSize);
-    const row = Math.floor(y / squareSize);
-
-    const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
-
-    const highlightClass = "highlight-overlay";
-
-    // Check if the square is already highlighted
-    const existingHighlight = Array.from(board.querySelectorAll(`.${highlightClass}`)).find(
-        (highlight) => highlight.style.transform === transform
-    );
-
-    if (existingHighlight) {
-        // If the square is already highlighted, remove the highlight
-        existingHighlight.remove();
-    } else {
-        // Otherwise, create a new highlight overlay
-        const highlight = document.createElement("div");
-        highlight.classList.add(highlightClass);
-        highlight.style.width = `${squareSize}px`;
-        highlight.style.height = `${squareSize}px`;
-        highlight.style.transform = transform;
-
-        // Append the highlight to the board
-        board.appendChild(highlight);
-    }
-};
-
-
+// Utility functions
 const isOrientationBlack = () => {
     const boardContainer = document.querySelector(".cg-wrap");
     return boardContainer?.classList.contains("orientation-black");
@@ -407,12 +228,12 @@ const getSquareFromEvent = (event) => {
     const x = event.clientX - rect.left; // X position relative to the board
     const y = event.clientY - rect.top;  // Y position relative to the board
 
-    const squareSize = rect.width / 8; // Assuming an 8x8 grid
+    const squareSize = rect.width / 8; // 8x8 grid
     let col = Math.floor(x / squareSize);
     let row = Math.floor(y / squareSize);
 
     if (isOrientationBlack()) {
-        // Flip row and column for black orientation
+        // Flip for black orientation
         row = 7 - row;
         col = 7 - col;
     }
@@ -420,7 +241,6 @@ const getSquareFromEvent = (event) => {
     return { row, col };
 };
 
-// Hex to rgba helper function
 const hexToRgba = (hex, alpha = 1) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -428,7 +248,134 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Get saved settings and inject CSS into page
+const isKnightOnSquare = (square) => {
+    const boards = document.querySelectorAll("cg-board");
+    if (boards.length === 0) {
+        console.warn("No cg-board elements found.");
+        return false;
+    }
+
+    for (const board of boards) {
+        const boardContainer = board.closest(".cg-wrap");
+        const isBlackOrientation = boardContainer?.classList.contains("orientation-black") || false;
+
+        const knightPieces = board.querySelectorAll("piece[class*='knight']");
+        if (knightPieces.length === 0) {
+            continue; 
+        }
+
+        const boardRect = board.getBoundingClientRect();
+        const squareWidth = boardRect.width / 8;
+        const squareHeight = boardRect.height / 8;
+        const threshold = 5;
+        
+        let expectedX = square.col * squareWidth;
+        let expectedY = square.row * squareHeight;
+
+        if (isBlackOrientation) {
+            expectedX = (7 - square.col) * squareWidth;
+            expectedY = (7 - square.row) * squareHeight;
+        }
+
+        for (const piece of knightPieces) {
+            const transform = piece.style.transform;
+            if (!transform) continue;
+            const matches = transform.match(/translate\(([\d.]+)px,\s*([\d.]+)px\)/);
+            if (!matches) continue;
+
+            const pieceX = parseFloat(matches[1]);
+            const pieceY = parseFloat(matches[2]);
+
+            const xMatch = Math.abs(pieceX - expectedX) <= threshold;
+            const yMatch = Math.abs(pieceY - expectedY) <= threshold;
+
+            if (xMatch && yMatch) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+};
+
+const colToFile = (col) => String.fromCharCode(97 + col);
+
+const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
+    const startX = normalizeCoord(startSquare.col);
+    const startY = normalizeCoord(startSquare.row); 
+    const endX = normalizeCoord(endSquare.col);
+    const endY = normalizeCoord(endSquare.row);
+
+    let midX, midY;
+    if (Math.abs(startSquare.row - endSquare.row) === 2) {
+        midX = startX;
+        midY = endY;
+    } else {
+        midX = endX;
+        midY = startY;
+    }
+
+    const arrowGroup = document.createElementNS(svgNS, "g");
+    arrowGroup.classList.add("knight-arrow");
+
+    // First segment
+    const firstSegment = document.createElementNS(svgNS, "line");
+    firstSegment.setAttribute("x1", startX);
+    firstSegment.setAttribute("y1", startY);
+    firstSegment.setAttribute("x2", midX);
+    firstSegment.setAttribute("y2", midY);
+    firstSegment.setAttribute("stroke", color);
+    firstSegment.setAttribute("stroke-width", 0.15625);
+    firstSegment.setAttribute("marker-end", "none");
+    firstSegment.setAttribute("stroke-linecap", "square");
+
+    // Second segment
+    const secondSegment = document.createElementNS(svgNS, "line");
+    secondSegment.setAttribute("x1", midX);
+    secondSegment.setAttribute("y1", midY);
+    secondSegment.setAttribute("x2", endX);
+    secondSegment.setAttribute("y2", endY);
+    secondSegment.setAttribute("stroke", color);
+    secondSegment.setAttribute("stroke-width", 0.15625);
+    secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
+
+    arrowGroup.appendChild(firstSegment);
+    arrowGroup.appendChild(secondSegment);
+
+    container.appendChild(arrowGroup);
+    return arrowGroup;
+};
+
+const drawStraightArrow = (startSquare, endSquare, color, container) => {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
+    const startX = normalizeCoord(startSquare.col);
+    const startY = normalizeCoord(startSquare.row); 
+    const endX = normalizeCoord(endSquare.col);
+    const endY = normalizeCoord(endSquare.row);
+
+    const arrowGroup = document.createElementNS(svgNS, "g");
+    arrowGroup.classList.add("straight-arrow");
+
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", startX);
+    line.setAttribute("y1", startY);
+    line.setAttribute("x2", endX);
+    line.setAttribute("y2", endY);
+    line.setAttribute("stroke", color);
+    line.setAttribute("stroke-width", 0.15625);
+    line.setAttribute("marker-end", "url(#arrowhead-g)");
+
+    arrowGroup.appendChild(line);
+    container.appendChild(arrowGroup);
+    return arrowGroup;
+};
+
+// Dynamic CSS injection
 chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
@@ -437,10 +384,11 @@ chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlig
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
     injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor, savedSelectedSquareColor);
-    enableSquareHighlighting(); // Enable right-click highlighting for squares
+
+    enableSquareHighlighting(); 
+    setupArrowDrawing();
 });
 
-// Listen for changes in settings, including selectedSquareColor
 chrome.storage.onChanged.addListener((changes) => {
     chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
         const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
@@ -455,7 +403,6 @@ chrome.storage.onChanged.addListener((changes) => {
     });
 });
 
-// Inject CSS into page
 const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
@@ -485,7 +432,7 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
             border: none;
             background-color: ${highlightOverlayColor};
             opacity: 0.8;
-            pointer-events: none; /* Prevent interference with mouse events */
+            pointer-events: none; 
             position: absolute;
             z-index: 1;
         }
@@ -494,6 +441,9 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         }
         input::-webkit-color-swatch {
             border: none;
+        }
+        .cg-shapes g line{
+        visibility: hidden;
         }
     `;
 
@@ -504,168 +454,232 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
     document.head.appendChild(style);
 };
 
-
-
-const isKnightOnSquare = (square) => {
-    // Select all cg-board elements to ensure the correct board is targeted
-    const boards = document.querySelectorAll("cg-board");
-    if (boards.length === 0) {
-        console.warn("No cg-board elements found.");
-        return false;
-    }
-
-    // Iterate through each board to find the knight
-    for (const board of boards) {
-        // Determine board orientation
-        const boardContainer = board.closest(".cg-wrap");
-        const isBlackOrientation = boardContainer?.classList.contains("orientation-black") || false;
-
-        // Select all pieces that include 'knight' in their class list
-        const knightPieces = board.querySelectorAll("piece[class*='knight']");
-        if (knightPieces.length === 0) {
-            console.warn("No knight pieces found on this board.");
-            continue; // Move to the next board if no knights are present
-        }
-
-        // Get board dimensions
-        const boardRect = board.getBoundingClientRect();
-        const squareWidth = boardRect.width / 8;
-        const squareHeight = boardRect.height / 8;
-
-        // Define a threshold for approximate matching (e.g., ±5px)
-        const threshold = 5;
-
-        // Calculate expected square position based on orientation
-        let expectedX = square.col * squareWidth;
-        let expectedY = square.row * squareHeight;
-
-        if (isBlackOrientation) {
-            // Flip coordinates for black orientation
-            expectedX = (7 - square.col) * squareWidth;
-            expectedY = (7 - square.row) * squareHeight;
-        }
-
-        // Iterate through all knight pieces to find a match
-        for (const piece of knightPieces) {
-            const transform = piece.style.transform;
-            if (!transform) {
-                console.warn("Knight piece without transform style:", piece);
-                continue;
-            }
-
-            // Match translate(xpx, ypx) with possible decimal values and optional spaces
-            const matches = transform.match(/translate\(([\d.]+)px,\s*([\d.]+)px\)/);
-            if (!matches) {
-                console.warn("Transform style does not match expected format:", transform);
-                continue;
-            }
-
-            const pieceX = parseFloat(matches[1]);
-            const pieceY = parseFloat(matches[2]);
-
-            // Check if the piece is within the threshold of the expected square
-            const xMatch = Math.abs(pieceX - expectedX) <= threshold;
-            const yMatch = Math.abs(pieceY - expectedY) <= threshold;
-
-            // Debug logs for verification
-            console.log(`Checking piece at (${pieceX}, ${pieceY}) against expected (${expectedX}, ${expectedY})`);
-            console.log(`X Match: ${xMatch}, Y Match: ${yMatch}`);
-
-            if (xMatch && yMatch) {
-                console.log("Knight found on the specified square.");
-                return true;
-            }
-        }
-    }
-
-    console.log("No knight found on the specified square.");
-    return false;
-};
-
-
-
-const drawKnightArrow = (startSquare, endSquare, color = DEFAULT_COLOR) => {
+const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
-    if (!board) {
-        console.error("Chessboard not found.");
-        return;
-    }
+    if (!board) return;
 
-    const container = board.parentElement.querySelector(".cg-shapes g");
-    if (!container) {
-        console.error(".cg-shapes g container not found.");
-        return;
-    }
+    const rect = board.getBoundingClientRect();
+    const x = event.clientX - rect.left; 
+    const y = event.clientY - rect.top;  
 
-    // Normalize the row and column to SVG coordinates (-4 to 4)
-    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
+    const squareSize = rect.width / 8; 
+    const col = Math.floor(x / squareSize);
+    const row = Math.floor(y / squareSize);
 
-    const startX = normalizeCoord(startSquare.col);
-    const startY = normalizeCoord(startSquare.row); 
-    const endX = normalizeCoord(endSquare.col);
-    const endY = normalizeCoord(endSquare.row);
+    const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
 
-    // Determine intermediate point for L-shape
-    let midX, midY;
-    if (Math.abs(startSquare.row - endSquare.row) === 2) {
-        midX = startX;
-        midY = endY;
+    const highlightClass = "highlight-overlay";
+
+    const existingHighlight = Array.from(board.querySelectorAll(`.${highlightClass}`)).find(
+        (highlight) => highlight.style.transform === transform
+    );
+
+    if (existingHighlight) {
+        existingHighlight.remove();
     } else {
-        midX = endX;
-        midY = startY;
+        const highlight = document.createElement("div");
+        highlight.classList.add(highlightClass);
+        highlight.style.width = `${squareSize}px`;
+        highlight.style.height = `${squareSize}px`;
+        highlight.style.transform = transform;
+        board.appendChild(highlight);
     }
-
-
-
-    const colToFile = (col) => String.fromCharCode(97 + col); // 'a' = 0, 'b' = 1, ...
-
-    // Calculate start and end square labels (e.g., "b1")
-    const startSquareLabel = `${colToFile(startSquare.col)}${8 - startSquare.row}`; // Flip row for correct chess rank
-    const endSquareLabel = `${colToFile(endSquare.col)}${8 - endSquare.row}`; // Flip row for correct chess rank
-
-    // Generate dynamic cgHash
-    const cgHash = `712,712,${startSquareLabel},${endSquareLabel},green`;
-
-    // Create a unique cgHash
-
-    // Create the SVG container
-    const svgNS = "http://www.w3.org/2000/svg";
-    const arrowGroup = document.createElementNS(svgNS, "g");
-    arrowGroup.setAttribute("cgHash", cgHash); // Add cgHash attribute
-    arrowGroup.classList.add("knight-arrow");
-
-    // Create the first segment
-    const firstSegment = document.createElementNS(svgNS, "line");
-    firstSegment.classList.add("knight-line");
-    firstSegment.setAttribute("x1", startX);
-    firstSegment.setAttribute("y1", startY);
-    firstSegment.setAttribute("x2", midX);
-    firstSegment.setAttribute("y2", midY);
-    firstSegment.setAttribute("stroke", color);
-    firstSegment.setAttribute("stroke-width", 0.15625); // Match default arrow width
-    firstSegment.setAttribute("opacity", 1);
-    firstSegment.setAttribute("marker-end", "none");
-    firstSegment.setAttribute("stroke-linecap", "square");
-
-    // Create the second segment
-    const secondSegment = document.createElementNS(svgNS, "line");
-    secondSegment.classList.add("knight-line");
-    secondSegment.setAttribute("x1", midX);
-    secondSegment.setAttribute("y1", midY);
-    secondSegment.setAttribute("x2", endX);
-    secondSegment.setAttribute("y2", endY);
-    secondSegment.setAttribute("stroke", color);
-    secondSegment.setAttribute("stroke-width", 0.15625); // Match default arrow width
-    secondSegment.setAttribute("opacity", 1);
-    secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
-
-    // Append segments to the group
-    arrowGroup.appendChild(firstSegment);
-    arrowGroup.appendChild(secondSegment);
-
-    // Append the group to the `.cg-shapes g` container
-    container.appendChild(arrowGroup);
-    console.log('knight arrow:', arrowGroup);
-    console.log("container: ", container);
 };
 
+let dragStartSquare = null; 
+let isRightMouseDown = false; 
+let currentArrowGroup = null; 
+
+let customArrowsContainer = null;
+let currentCustomArrowContainer = null;
+let lastEndSquare = null;  // Track the last square we drew an arrow towards
+
+// Setup arrow containers
+const setupArrowContainers = () => {
+    const board = document.querySelector("cg-board");
+    if (!board) return;
+
+    const cgContainer = board.closest("cg-container");
+    if (!cgContainer) return;
+
+    if (!cgContainer.querySelector(".custom-arrows")) {
+        let defs = cgContainer.querySelector("defs#arrowheads");
+        if (!defs) {
+            defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            defs.setAttribute("id", "arrowheads");
+
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            marker.setAttribute("id", "arrowhead-g");
+            marker.setAttribute("orient", "auto");
+            marker.setAttribute("markerWidth", "4");
+            marker.setAttribute("markerHeight", "4");
+            marker.setAttribute("refX", "2.05");
+            marker.setAttribute("refY", "2");
+            
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", "M0,0 V4 L3,2 Z");
+            marker.appendChild(path);
+
+            defs.appendChild(marker);
+            cgContainer.appendChild(defs);
+        }
+
+        customArrowsContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        customArrowsContainer.setAttribute("class", "custom-arrows");
+        customArrowsContainer.setAttribute("viewBox", "-4 -4 8 8");
+        customArrowsContainer.style.position = "absolute";
+        customArrowsContainer.style.top = "0";
+        customArrowsContainer.style.left = "0";
+        customArrowsContainer.style.width = "100%";
+        customArrowsContainer.style.height = "100%";
+        customArrowsContainer.style.pointerEvents = "none";
+        cgContainer.appendChild(customArrowsContainer);
+
+        currentCustomArrowContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        currentCustomArrowContainer.setAttribute("class", "current-custom-arrow");
+        currentCustomArrowContainer.setAttribute("viewBox", "-4 -4 8 8");
+        currentCustomArrowContainer.style.position = "absolute";
+        currentCustomArrowContainer.style.top = "0";
+        currentCustomArrowContainer.style.left = "0";
+        currentCustomArrowContainer.style.width = "100%";
+        currentCustomArrowContainer.style.height = "100%";
+        currentCustomArrowContainer.style.pointerEvents = "none";
+        cgContainer.appendChild(currentCustomArrowContainer);
+    } else {
+        customArrowsContainer = cgContainer.querySelector(".custom-arrows");
+        currentCustomArrowContainer = cgContainer.querySelector(".current-custom-arrow");
+    }
+};
+
+const setupArrowDrawing = () => {
+    setupArrowContainers();
+
+    document.addEventListener("pointerdown", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2) { 
+            isRightMouseDown = true; 
+            dragStartSquare = getSquareFromEvent(event);
+            lastEndSquare = null;
+            if (currentCustomArrowContainer) {
+                currentCustomArrowContainer.innerHTML = "";
+            }
+        }
+    });
+
+    document.addEventListener("mousemove", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (isRightMouseDown && dragStartSquare) {
+            const currentSquare = getSquareFromEvent(event); 
+            if (!currentSquare) return;
+
+            // Only redraw if the current square changed
+            if (lastEndSquare && lastEndSquare.row === currentSquare.row && lastEndSquare.col === currentSquare.col) {
+                return; // Same square, no need to redraw
+            }
+
+            lastEndSquare = currentSquare;
+
+            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
+            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
+            const isValidKnightMove =
+                (rowDifference === 2 && colDifference === 1) ||
+                (rowDifference === 1 && colDifference === 2);
+
+            currentCustomArrowContainer.innerHTML = "";
+
+            chrome.storage.sync.get(["arrowColor"], (data) => {
+                const color = data.arrowColor || DEFAULT_COLOR;
+
+                if (isValidKnightMove) {
+                    drawKnightArrowSegments(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
+                } else {
+                    drawStraightArrow(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
+                }
+            });
+        }
+    });
+
+    document.addEventListener("mouseup", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2 && dragStartSquare) {
+            const endSquare = getSquareFromEvent(event);
+
+            chrome.storage.sync.get(["arrowColor"], (data) => {
+                const color = data.arrowColor || DEFAULT_COLOR;
+
+                if (currentCustomArrowContainer && currentCustomArrowContainer.firstChild) {
+                    const clones = [...currentCustomArrowContainer.childNodes].map(node => node.cloneNode(true));
+                    clones.forEach(clone => customArrowsContainer.appendChild(clone));
+                    currentCustomArrowContainer.innerHTML = "";
+                }
+            });
+        }
+
+        if (event.button === 2) {
+            isRightMouseDown = false;
+            dragStartSquare = null;
+            lastEndSquare = null;
+        }
+    });
+
+    document.addEventListener("click", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 0 && customArrowsContainer && currentCustomArrowContainer) {
+            customArrowsContainer.innerHTML = "";
+            currentCustomArrowContainer.innerHTML = "";
+        }
+
+        board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
+    });
+
+    document.addEventListener("contextmenu", (event) => {
+        const board = document.querySelector("cg-board");
+        if (board && board.contains(event.target)) {
+            event.preventDefault();
+        }
+    });
+};
+
+
+// Square highlighting 
+const enableSquareHighlighting = () => {
+    let wasRightMouseDown = false;
+    let startSquareHighlight = null;
+
+    document.addEventListener("pointerdown", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2) {
+            wasRightMouseDown = true;
+            startSquareHighlight = getSquareFromEvent(event);
+        }
+    });
+
+    document.addEventListener("mouseup", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2 && wasRightMouseDown) {
+            const endSquareHighlight = getSquareFromEvent(event);
+            if (endSquareHighlight && startSquareHighlight &&
+                endSquareHighlight.row === startSquareHighlight.row &&
+                endSquareHighlight.col === startSquareHighlight.col) {
+                toggleSquareHighlight(event);
+            }
+        }
+
+        if (event.button === 2) {
+            wasRightMouseDown = false;
+            startSquareHighlight = null;
+        }
+    });
+};

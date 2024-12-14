@@ -320,8 +320,8 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     firstSegment.setAttribute("x2", midX);
     firstSegment.setAttribute("y2", midY);
     firstSegment.setAttribute("stroke", color);
-    firstSegment.setAttribute("stroke-width", 0.14625);
-    firstSegment.setAttribute("marker-end", "none");
+    firstSegment.setAttribute("stroke-width", 0.165);
+    // firstSegment.setAttribute("marker-end", "none");
     firstSegment.setAttribute("stroke-linecap", "square");
 
     const secondSegment = document.createElementNS(svgNS, "line");
@@ -330,7 +330,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     secondSegment.setAttribute("x2", endX);
     secondSegment.setAttribute("y2", endY);
     secondSegment.setAttribute("stroke", color);
-    secondSegment.setAttribute("stroke-width", 0.14625);
+    secondSegment.setAttribute("stroke-width", 0.165);
     secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
 
     arrowGroup.appendChild(firstSegment);

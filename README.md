@@ -1,5 +1,5 @@
 # Better Lichess
-Chrome extension that improves Lichess by adding proper knight arrows, better square highlighting, and customizable elements.
+Chrome extension that improves Lichess by adding proper knight arrows, better square highlighting, and color customization.
 
 ![image](https://github.com/user-attachments/assets/e0952688-bf49-485f-a993-a1c911dde7e9)
 

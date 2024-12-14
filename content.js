@@ -682,7 +682,8 @@ const enableSquareHighlighting = () => {
         }
     });
 
-    document.addEventListener("mouseup", (event) => {
+    // Use pointerup instead of mouseup for slightly faster response
+    document.addEventListener("pointerup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 

@@ -439,6 +439,8 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         .cg-shapes g[cgHash*="paleBlue"] line {
             visibility: visible !important;
         }
+
+        
     `;
 
     const style = document.createElement("style");

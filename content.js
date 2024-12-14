@@ -433,7 +433,11 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
             border: none;
         }
         .cg-shapes g line {
-            visibility: hidden;
+            visibility: hidden !important;
+        }
+
+        .cg-shapes g[cgHash*="paleBlue"] line {
+            visibility: visible !important;
         }
     `;
 
@@ -702,3 +706,4 @@ const enableSquareHighlighting = () => {
         }
     });
 };
+

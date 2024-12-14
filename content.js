@@ -359,7 +359,7 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
     line.setAttribute("marker-end", "url(#arrowhead-g)");
-    line.setAttribute("stroke-linecap", "square");
+    line.setAttribute("stroke-linecap", "butt");
 
     arrowGroup.appendChild(line);
     container.appendChild(arrowGroup);

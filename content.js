@@ -429,6 +429,11 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         cg-container .cg-shapes {
             opacity: ${opacity} !important;
         }
+
+        .arrow-overlay{
+            opacity: ${opacity} !important;
+        }
+        
         input::-webkit-color-swatch {
             border: none;
         }

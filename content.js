@@ -225,15 +225,13 @@ const getSquareFromEvent = (event) => {
     if (!board) return null;
 
     const rect = board.getBoundingClientRect();
-    const x = event.clientX - rect.left; // X position relative to the board
-    const y = event.clientY - rect.top;  // Y position relative to the board
-
-    const squareSize = rect.width / 8; // 8x8 grid
+    const x = event.clientX - rect.left; 
+    const y = event.clientY - rect.top;  
+    const squareSize = rect.width / 8;
     let col = Math.floor(x / squareSize);
     let row = Math.floor(y / squareSize);
 
     if (isOrientationBlack()) {
-        // Flip for black orientation
         row = 7 - row;
         col = 7 - col;
     }
@@ -258,11 +256,9 @@ const isKnightOnSquare = (square) => {
     for (const board of boards) {
         const boardContainer = board.closest(".cg-wrap");
         const isBlackOrientation = boardContainer?.classList.contains("orientation-black") || false;
-
         const knightPieces = board.querySelectorAll("piece[class*='knight']");
-        if (knightPieces.length === 0) {
-            continue; 
-        }
+
+        if (knightPieces.length === 0) continue;
 
         const boardRect = board.getBoundingClientRect();
         const squareWidth = boardRect.width / 8;
@@ -280,7 +276,7 @@ const isKnightOnSquare = (square) => {
         for (const piece of knightPieces) {
             const transform = piece.style.transform;
             if (!transform) continue;
-            const matches = transform.match(/translate\(([\d.]+)px,\s*([\d.]+)px\)/);
+            const matches = transform.match(/translate\\(([\d.]+)px,\\s*([\d.]+)px\\)/);
             if (!matches) continue;
 
             const pieceX = parseFloat(matches[1]);
@@ -298,11 +294,8 @@ const isKnightOnSquare = (square) => {
     return false;
 };
 
-const colToFile = (col) => String.fromCharCode(97 + col);
-
 const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     const svgNS = "http://www.w3.org/2000/svg";
-
     const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
     const startX = normalizeCoord(startSquare.col);
     const startY = normalizeCoord(startSquare.row); 
@@ -321,7 +314,6 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     const arrowGroup = document.createElementNS(svgNS, "g");
     arrowGroup.classList.add("knight-arrow");
 
-    // First segment
     const firstSegment = document.createElementNS(svgNS, "line");
     firstSegment.setAttribute("x1", startX);
     firstSegment.setAttribute("y1", startY);
@@ -331,9 +323,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     firstSegment.setAttribute("stroke-width", 0.15625);
     firstSegment.setAttribute("marker-end", "none");
     firstSegment.setAttribute("stroke-linecap", "square");
-    firstSegment.setAttribute("z-index", 9);
 
-    // Second segment
     const secondSegment = document.createElementNS(svgNS, "line");
     secondSegment.setAttribute("x1", midX);
     secondSegment.setAttribute("y1", midY);
@@ -342,18 +332,16 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     secondSegment.setAttribute("stroke", color);
     secondSegment.setAttribute("stroke-width", 0.15625);
     secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
-    secondSegment.setAttribute("z-index", 9);
 
     arrowGroup.appendChild(firstSegment);
     arrowGroup.appendChild(secondSegment);
-
     container.appendChild(arrowGroup);
+
     return arrowGroup;
 };
 
 const drawStraightArrow = (startSquare, endSquare, color, container) => {
     const svgNS = "http://www.w3.org/2000/svg";
-
     const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
     const startX = normalizeCoord(startSquare.col);
     const startY = normalizeCoord(startSquare.row); 
@@ -371,14 +359,12 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
     line.setAttribute("marker-end", "url(#arrowhead-g)");
-    line.setAttribute("z-index", 9);
 
     arrowGroup.appendChild(line);
     container.appendChild(arrowGroup);
     return arrowGroup;
 };
 
-// Dynamic CSS injection
 chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
@@ -445,11 +431,8 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         input::-webkit-color-swatch {
             border: none;
         }
-        .cg-shapes g line{
-        visibility: hidden;
-        }
-        .custom-arrows g {
-        z-index: 9;
+        .cg-shapes g line {
+            visibility: hidden;
         }
     `;
 
@@ -467,13 +450,11 @@ const toggleSquareHighlight = (event) => {
     const rect = board.getBoundingClientRect();
     const x = event.clientX - rect.left; 
     const y = event.clientY - rect.top;  
-
     const squareSize = rect.width / 8; 
     const col = Math.floor(x / squareSize);
     const row = Math.floor(y / squareSize);
 
     const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
-
     const highlightClass = "highlight-overlay";
 
     const existingHighlight = Array.from(board.querySelectorAll(`.${highlightClass}`)).find(
@@ -495,12 +476,10 @@ const toggleSquareHighlight = (event) => {
 let dragStartSquare = null; 
 let isRightMouseDown = false; 
 let currentArrowGroup = null; 
-
 let customArrowsContainer = null;
 let currentCustomArrowContainer = null;
-let lastEndSquare = null;  // Track the last square we drew an arrow towards
+let lastEndSquare = null; 
 
-// Setup arrow containers
 const setupArrowContainers = () => {
     const board = document.querySelector("cg-board");
     if (!board) return;
@@ -508,52 +487,84 @@ const setupArrowContainers = () => {
     const cgContainer = board.closest("cg-container");
     if (!cgContainer) return;
 
-    if (!cgContainer.querySelector(".custom-arrows")) {
-        let defs = cgContainer.querySelector("defs#arrowheads");
-        if (!defs) {
-            defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-            defs.setAttribute("id", "arrowheads");
+    // Create arrow overlay if not present
+    let arrowOverlay = cgContainer.querySelector(".arrow-overlay");
+    if (!arrowOverlay) {
+        arrowOverlay = document.createElement('div');
+        arrowOverlay.className = 'arrow-overlay';
+        arrowOverlay.style.position = 'absolute';
+        arrowOverlay.style.top = '0';
+        arrowOverlay.style.left = '0';
+        arrowOverlay.style.width = '100%';
+        arrowOverlay.style.height = '100%';
+        arrowOverlay.style.pointerEvents = 'none';
+        arrowOverlay.style.zIndex = '9999'; // ensures it's above pieces
+        cgContainer.appendChild(arrowOverlay);
+    }
 
-            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-            marker.setAttribute("id", "arrowhead-g");
-            marker.setAttribute("orient", "auto");
-            marker.setAttribute("markerWidth", "4");
-            marker.setAttribute("markerHeight", "4");
-            marker.setAttribute("refX", "2.05");
-            marker.setAttribute("refY", "2");
-            
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("d", "M0,0 V4 L3,2 Z");
-            marker.appendChild(path);
+    // Create defs if not present
+    let defs = cgContainer.querySelector("defs#arrowheads");
+    if (!defs) {
+        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        defs.setAttribute("id", "arrowheads");
 
-            defs.appendChild(marker);
-            cgContainer.appendChild(defs);
-        }
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.setAttribute("id", "arrowhead-g");
+        marker.setAttribute("orient", "auto");
+        marker.setAttribute("markerWidth", "4");
+        marker.setAttribute("markerHeight", "4");
+        marker.setAttribute("refX", "2.05");
+        marker.setAttribute("refY", "2");
 
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", "M0,0 V4 L3,2 Z");
+        marker.appendChild(path);
+
+        defs.appendChild(marker);
+        cgContainer.appendChild(defs);
+    }
+
+    // Create or select the custom arrows containers
+    if (!arrowOverlay.querySelector(".custom-arrows")) {
+        // Custom Arrows Container
         customArrowsContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         customArrowsContainer.setAttribute("class", "custom-arrows");
         customArrowsContainer.setAttribute("viewBox", "-4 -4 8 8");
+        customArrowsContainer.setAttribute("preserveAspectRatio", "xMidYMid slice");
+        // Absolute positioning to overlay on top of the board
         customArrowsContainer.style.position = "absolute";
         customArrowsContainer.style.top = "0";
         customArrowsContainer.style.left = "0";
         customArrowsContainer.style.width = "100%";
         customArrowsContainer.style.height = "100%";
         customArrowsContainer.style.pointerEvents = "none";
-        cgContainer.appendChild(customArrowsContainer);
+        arrowOverlay.appendChild(customArrowsContainer);
 
+        // Current Custom Arrow Container
         currentCustomArrowContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         currentCustomArrowContainer.setAttribute("class", "current-custom-arrow");
         currentCustomArrowContainer.setAttribute("viewBox", "-4 -4 8 8");
+        currentCustomArrowContainer.setAttribute("preserveAspectRatio", "xMidYMid slice");
         currentCustomArrowContainer.style.position = "absolute";
         currentCustomArrowContainer.style.top = "0";
         currentCustomArrowContainer.style.left = "0";
         currentCustomArrowContainer.style.width = "100%";
         currentCustomArrowContainer.style.height = "100%";
         currentCustomArrowContainer.style.pointerEvents = "none";
-        cgContainer.appendChild(currentCustomArrowContainer);
+
+        // Append after customArrowsContainer so it stacks above it
+        arrowOverlay.appendChild(currentCustomArrowContainer);
     } else {
-        customArrowsContainer = cgContainer.querySelector(".custom-arrows");
-        currentCustomArrowContainer = cgContainer.querySelector(".current-custom-arrow");
+        customArrowsContainer = arrowOverlay.querySelector(".custom-arrows");
+        currentCustomArrowContainer = arrowOverlay.querySelector(".current-custom-arrow");
+        // Ensure they have proper absolute positioning
+        customArrowsContainer.style.position = "absolute";
+        customArrowsContainer.style.top = "0";
+        customArrowsContainer.style.left = "0";
+
+        currentCustomArrowContainer.style.position = "absolute";
+        currentCustomArrowContainer.style.top = "0";
+        currentCustomArrowContainer.style.left = "0";
     }
 };
 
@@ -582,30 +593,29 @@ const setupArrowDrawing = () => {
             const currentSquare = getSquareFromEvent(event); 
             if (!currentSquare) return;
 
-            // Only redraw if the current square changed
-            if (lastEndSquare && lastEndSquare.row === currentSquare.row && lastEndSquare.col === currentSquare.col) {
-                return; // Same square, no need to redraw
+            // If the mouse moved to a new square, redraw the arrow
+            if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
+                lastEndSquare = currentSquare;
+
+                const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
+                const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
+                const isValidKnightMove =
+                    (rowDifference === 2 && colDifference === 1) ||
+                    (rowDifference === 1 && colDifference === 2);
+
+                currentCustomArrowContainer.innerHTML = "";
+
+                chrome.storage.sync.get(["arrowColor"], (data) => {
+                    const color = data.arrowColor || DEFAULT_COLOR;
+
+                    if (isValidKnightMove) {
+                        drawKnightArrowSegments(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
+                    } else {
+                        drawStraightArrow(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
+                    }
+                });
             }
-
-            lastEndSquare = currentSquare;
-
-            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
-            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
-            const isValidKnightMove =
-                (rowDifference === 2 && colDifference === 1) ||
-                (rowDifference === 1 && colDifference === 2);
-
-            currentCustomArrowContainer.innerHTML = "";
-
-            chrome.storage.sync.get(["arrowColor"], (data) => {
-                const color = data.arrowColor || DEFAULT_COLOR;
-
-                if (isValidKnightMove) {
-                    drawKnightArrowSegments(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
-                } else {
-                    drawStraightArrow(dragStartSquare, currentSquare, color, currentCustomArrowContainer);
-                }
-            });
+            // If same square, do nothing, arrow remains visible
         }
     });
 
@@ -614,11 +624,9 @@ const setupArrowDrawing = () => {
         if (!board || !board.contains(event.target)) return;
 
         if (event.button === 2 && dragStartSquare) {
-            const endSquare = getSquareFromEvent(event);
-
             chrome.storage.sync.get(["arrowColor"], (data) => {
                 const color = data.arrowColor || DEFAULT_COLOR;
-
+                // On mouseup, finalize arrow
                 if (currentCustomArrowContainer && currentCustomArrowContainer.firstChild) {
                     const clones = [...currentCustomArrowContainer.childNodes].map(node => node.cloneNode(true));
                     clones.forEach(clone => customArrowsContainer.appendChild(clone));
@@ -654,8 +662,6 @@ const setupArrowDrawing = () => {
     });
 };
 
-
-// Square highlighting 
 const enableSquareHighlighting = () => {
     let wasRightMouseDown = false;
     let startSquareHighlight = null;

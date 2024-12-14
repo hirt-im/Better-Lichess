@@ -359,6 +359,7 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
     line.setAttribute("marker-end", "url(#arrowhead-g)");
+    line.setAttribute("stroke-linecap", "square");
 
     arrowGroup.appendChild(line);
     container.appendChild(arrowGroup);
@@ -586,12 +587,17 @@ const setupArrowDrawing = () => {
     });
 
     document.addEventListener("mousemove", (event) => {
+        if(!isRightMouseDown){return;}
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 
         if (isRightMouseDown && dragStartSquare) {
             const currentSquare = getSquareFromEvent(event); 
             if (!currentSquare) return;
+            if (currentSquare.row === dragStartSquare.row && currentSquare.col === dragStartSquare.col) {
+                currentCustomArrowContainer.innerHTML = "";
+                return;
+            }
 
             // If the mouse moved to a new square, redraw the arrow
             if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {

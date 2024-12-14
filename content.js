@@ -331,6 +331,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     firstSegment.setAttribute("stroke-width", 0.15625);
     firstSegment.setAttribute("marker-end", "none");
     firstSegment.setAttribute("stroke-linecap", "square");
+    firstSegment.setAttribute("z-index", 9);
 
     // Second segment
     const secondSegment = document.createElementNS(svgNS, "line");
@@ -341,6 +342,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     secondSegment.setAttribute("stroke", color);
     secondSegment.setAttribute("stroke-width", 0.15625);
     secondSegment.setAttribute("marker-end", "url(#arrowhead-g)");
+    secondSegment.setAttribute("z-index", 9);
 
     arrowGroup.appendChild(firstSegment);
     arrowGroup.appendChild(secondSegment);
@@ -369,6 +371,7 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
     line.setAttribute("marker-end", "url(#arrowhead-g)");
+    line.setAttribute("z-index", 9);
 
     arrowGroup.appendChild(line);
     container.appendChild(arrowGroup);
@@ -444,6 +447,9 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         }
         .cg-shapes g line{
         visibility: hidden;
+        }
+        .custom-arrows g {
+        z-index: 9;
         }
     `;
 

@@ -313,6 +313,9 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
 
     const arrowGroup = document.createElementNS(svgNS, "g");
     arrowGroup.classList.add("knight-arrow");
+    // NEW: Add data attributes to identify this arrow
+    arrowGroup.setAttribute('data-start', `${startSquare.row},${startSquare.col}`);
+    arrowGroup.setAttribute('data-end', `${endSquare.row},${endSquare.col}`);
 
     const firstSegment = document.createElementNS(svgNS, "line");
     firstSegment.setAttribute("x1", startX);
@@ -321,7 +324,6 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     firstSegment.setAttribute("y2", midY);
     firstSegment.setAttribute("stroke", color);
     firstSegment.setAttribute("stroke-width", 0.165);
-    // firstSegment.setAttribute("marker-end", "none");
     firstSegment.setAttribute("stroke-linecap", "square");
 
     const secondSegment = document.createElementNS(svgNS, "line");
@@ -340,6 +342,7 @@ const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
     return arrowGroup;
 };
 
+
 const drawStraightArrow = (startSquare, endSquare, color, container) => {
     const svgNS = "http://www.w3.org/2000/svg";
     const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
@@ -350,6 +353,9 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
 
     const arrowGroup = document.createElementNS(svgNS, "g");
     arrowGroup.classList.add("straight-arrow");
+    // NEW: Add data attributes to identify this arrow
+    arrowGroup.setAttribute('data-start', `${startSquare.row},${startSquare.col}`);
+    arrowGroup.setAttribute('data-end', `${endSquare.row},${endSquare.col}`);
 
     const line = document.createElementNS(svgNS, "line");
     line.setAttribute("x1", startX);
@@ -365,7 +371,6 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     container.appendChild(arrowGroup);
     return arrowGroup;
 };
-
 
 chrome.storage.onChanged.addListener((changes) => {
     chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
@@ -636,19 +641,34 @@ const setupArrowDrawing = () => {
     document.addEventListener("mouseup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
-
+    
         if (event.button === 2 && dragStartSquare) {
             chrome.storage.sync.get(["arrowColor"], (data) => {
                 const color = data.arrowColor || DEFAULT_COLOR;
-                // On mouseup, finalize arrow
+                // On mouseup, finalize arrow if it exists
                 if (currentCustomArrowContainer && currentCustomArrowContainer.firstChild) {
-                    const clones = [...currentCustomArrowContainer.childNodes].map(node => node.cloneNode(true));
-                    clones.forEach(clone => customArrowsContainer.appendChild(clone));
-                    currentCustomArrowContainer.innerHTML = "";
+                    
+                    // Get the arrow we just drew
+                    const newArrow = currentCustomArrowContainer.firstChild; 
+                    const start = newArrow.getAttribute('data-start');
+                    const end = newArrow.getAttribute('data-end');
+    
+                    // Check if an arrow with the same start/end already exists
+                    const existingArrow = customArrowsContainer.querySelector(`g[data-start="${start}"][data-end="${end}"]`);
+                    if (existingArrow) {
+                        // If found, remove it (erase the arrow)
+                        existingArrow.remove();
+                        currentCustomArrowContainer.innerHTML = "";
+                    } else {
+                        // Otherwise, add the new arrow
+                        const clones = [...currentCustomArrowContainer.childNodes].map(node => node.cloneNode(true));
+                        clones.forEach(clone => customArrowsContainer.appendChild(clone));
+                        currentCustomArrowContainer.innerHTML = "";
+                    }
                 }
             });
         }
-
+    
         if (event.button === 2) {
             isRightMouseDown = false;
             dragStartSquare = null;

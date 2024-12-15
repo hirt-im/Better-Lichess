@@ -743,8 +743,37 @@ function setCustomMarker() {
     // Append the new marker to the <defs> section
     defs.appendChild(marker);
   }
-  
 
+
+
+// Re-append arrowContainer and customMarker when puzzle board re-renders
+function setupBoardObserver() {
+    const targetNode = document.querySelector('.puzzle.puzzle-play');
+    if (!targetNode) return;
+
+    const config = { childList: true, subtree: true };
+    let isInitialized = false;
+
+    const callback = (mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'childList') {
+                // Check if cg-board or cg-container changed
+                const cgContainer = document.querySelector('cg-container');
+                if (cgContainer) {
+                    const arrowOverlay = cgContainer.querySelector('.arrow-overlay');
+                    if (!arrowOverlay) {
+                        // Re-setup arrow containers and drawing
+                        setupArrowContainers();
+                        setCustomMarker();
+                    }
+                }
+            }
+        }
+    };
+
+    const observer = new MutationObserver(callback);
+    observer.observe(targetNode, config);
+}
 
 
 
@@ -756,8 +785,8 @@ chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlig
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
     injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor, savedSelectedSquareColor);
-
-    setCustomMarker();
     enableSquareHighlighting(); 
+    setCustomMarker();
     setupArrowDrawing();
+    setupBoardObserver();
 });

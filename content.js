@@ -365,7 +365,7 @@ const drawStraightArrow = (startSquare, endSquare, color, container) => {
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", 0.15625);
     line.setAttribute("marker-end", "url(#custom)");
-    line.setAttribute("stroke-linecap", "butt");
+    line.setAttribute("stroke-linecap", "square");
 
     arrowGroup.appendChild(line);
     container.appendChild(arrowGroup);
@@ -525,7 +525,8 @@ const setupArrowContainers = () => {
         marker.setAttribute("refY", "2");
 
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", "M0,0 V4 L3,2 Z");
+        // path.setAttribute("d", "M0,0 V4 L3,2 Z");
+        path.setAttribute("d", "M0,0 V4 L3.5,2 Z");
         marker.appendChild(path);
 
         defs.appendChild(marker);
@@ -607,14 +608,16 @@ function createArrowElements(isKnight, color) {
         firstSegment.setAttribute("stroke", color);
         firstSegment.setAttribute("stroke-linecap", 'square');
         secondSegment.setAttribute("stroke", color);
+        // secondSegment.setAttribute("stroke-linecap", 'square');
 
         currentArrowGroup.appendChild(firstSegment);
         currentArrowGroup.appendChild(secondSegment);
     } else {
         // Straight arrow has one segment
         firstSegment = document.createElementNS(svgNS, "line");
-        firstSegment.setAttribute("stroke-width", 0.15625);
+        firstSegment.setAttribute("stroke-width", 0.165);
         firstSegment.setAttribute("marker-end", "url(#custom)");
+        firstSegment.setAttribute("stroke-linecap", 'square');
         firstSegment.setAttribute("stroke", color);
 
         currentArrowGroup.appendChild(firstSegment);
@@ -853,7 +856,7 @@ function setCustomMarker() {
   
     // Create the <path> element for the marker shape
     const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', 'M0,0 V4 L3,2 Z');
+    path.setAttribute('d', 'M0,0 V4 L3.42,2 Z');
     path.setAttribute('fill', arrowColor);
   
     // Append the path to the marker

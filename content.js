@@ -608,7 +608,7 @@ function createArrowElements(isKnight, color) {
         firstSegment.setAttribute("stroke", color);
         firstSegment.setAttribute("stroke-linecap", 'square');
         secondSegment.setAttribute("stroke", color);
-        // secondSegment.setAttribute("stroke-linecap", 'square');
+        secondSegment.setAttribute("stroke-linecap", 'square');
 
         currentArrowGroup.appendChild(firstSegment);
         currentArrowGroup.appendChild(secondSegment);
@@ -856,7 +856,7 @@ function setCustomMarker() {
   
     // Create the <path> element for the marker shape
     const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', 'M0,0 V4 L3.42,2 Z');
+    path.setAttribute('d', 'M.3,0 V4 L3.3,2 Z');
     path.setAttribute('fill', arrowColor);
   
     // Append the path to the marker

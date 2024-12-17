@@ -3,7 +3,7 @@
   "name": "Better Lichess",
   "version": "1.0",
   "description": "Adds proper knight arrows, better square highlighting, and custom colors to Lichess.",
-  "permissions": ["scripting", "storage"],
+  "permissions": ["storage"],
   "host_permissions": ["https://lichess.org/*"],
   "content_scripts": [
     {

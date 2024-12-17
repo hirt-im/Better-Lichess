@@ -642,97 +642,91 @@ const setupArrowDrawing = () => {
     });
 
     document.addEventListener("mousemove", (event) => {
-        if (!isRightMouseDown) return;
+        if (!isRightMouseDown || !dragStartSquare) return;
+    
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
-
-        if (isRightMouseDown && dragStartSquare) {
-            const currentSquare = getSquareFromEvent(event); 
-            if (!currentSquare) return;
-            if (currentSquare.row === dragStartSquare.row && currentSquare.col === dragStartSquare.col) {
-                // If it's the same square, no arrow needed
-                if (firstSegment) {
-                    // Just collapse the lines if needed
-                    firstSegment.setAttribute("x2", firstSegment.getAttribute("x1"));
-                    firstSegment.setAttribute("y2", firstSegment.getAttribute("y1"));
-                }
-                if (secondSegment) {
-                    secondSegment.setAttribute("x2", secondSegment.getAttribute("x1"));
-                    secondSegment.setAttribute("y2", secondSegment.getAttribute("y1"));
-                }
-                return;
+    
+        const currentSquare = getSquareFromEvent(event);
+        if (!currentSquare) return;
+    
+        // Check if the current square is the same as the starting square
+        if (currentSquare.row === dragStartSquare.row && currentSquare.col === dragStartSquare.col) {
+            if (currentArrowGroup) {
+                currentArrowGroup.remove(); // Remove the arrow if the end square is the same as the start square
+                currentArrowGroup = null;
             }
-
-            // If the mouse moved to a new square, update the arrow
-            if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
-                lastEndSquare = currentSquare;
-
-                const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
-                const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
-                isKnightArrow =
-                    (rowDifference === 2 && colDifference === 1) ||
-                    (rowDifference === 1 && colDifference === 2);
-
-                chrome.storage.sync.get(["arrowColor"], (data) => {
-                    const color = data.arrowColor || DEFAULT_COLOR;
-
-                    if (!currentArrowGroup) {
-                        const svgNS = "http://www.w3.org/2000/svg";
-                        currentArrowGroup = document.createElementNS(svgNS, "g");
-                        currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
-                        currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
-                        currentCustomArrowContainer.appendChild(currentArrowGroup);
-                        createArrowElements(isKnightArrow, color);
-                        wasKnightArrow = isKnightArrow;
-                    } else if (wasKnightArrow !== isKnightArrow) {
-                        // Rebuild the arrow lines if the type changed (knight vs straight)
-                        currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
-                        currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
-                        createArrowElements(isKnightArrow, color);
-                        wasKnightArrow = isKnightArrow;
+            return; // Stop here, no arrow needs to be drawn
+        }
+    
+        // If mouse moved to a new square, update or draw the arrow
+        if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
+            lastEndSquare = currentSquare;
+    
+            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
+            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
+            isKnightArrow =
+                (rowDifference === 2 && colDifference === 1) ||
+                (rowDifference === 1 && colDifference === 2);
+    
+            chrome.storage.sync.get(["arrowColor"], (data) => {
+                const color = data.arrowColor || DEFAULT_COLOR;
+    
+                if (!currentArrowGroup) {
+                    const svgNS = "http://www.w3.org/2000/svg";
+                    currentArrowGroup = document.createElementNS(svgNS, "g");
+                    currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
+                    currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
+                    currentCustomArrowContainer.appendChild(currentArrowGroup);
+                    createArrowElements(isKnightArrow, color);
+                    wasKnightArrow = isKnightArrow;
+                } else if (wasKnightArrow !== isKnightArrow) {
+                    currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
+                    currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
+                    createArrowElements(isKnightArrow, color);
+                    wasKnightArrow = isKnightArrow;
+                }
+    
+                // Update arrow coordinates
+                const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
+                const startX = normalizeCoord(dragStartSquare.col);
+                const startY = normalizeCoord(dragStartSquare.row); 
+                const endX = normalizeCoord(currentSquare.col);
+                const endY = normalizeCoord(currentSquare.row);
+    
+                if (isKnightArrow && firstSegment && secondSegment) {
+                    let midX, midY;
+                    if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
+                        midX = startX;
+                        midY = endY;
+                    } else {
+                        midX = endX;
+                        midY = startY;
                     }
-
-                    // Update coordinates
-                    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
-                    const startX = normalizeCoord(dragStartSquare.col);
-                    const startY = normalizeCoord(dragStartSquare.row); 
-                    const endX = normalizeCoord(currentSquare.col);
-                    const endY = normalizeCoord(currentSquare.row);
-
-                    if (isKnightArrow && firstSegment && secondSegment) {
-                        let midX, midY;
-                        if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
-                            midX = startX;
-                            midY = endY;
-                        } else {
-                            midX = endX;
-                            midY = startY;
-                        }
-
-                        firstSegment.setAttribute("x1", startX);
-                        firstSegment.setAttribute("y1", startY);
-                        firstSegment.setAttribute("x2", midX);
-                        firstSegment.setAttribute("y2", midY);
-
-                        secondSegment.setAttribute("x1", midX);
-                        secondSegment.setAttribute("y1", midY);
-                        secondSegment.setAttribute("x2", endX);
-                        secondSegment.setAttribute("y2", endY);
-
-                        currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
-                    } else if (!isKnightArrow && firstSegment) {
-                        firstSegment.setAttribute("x1", startX);
-                        firstSegment.setAttribute("y1", startY);
-                        firstSegment.setAttribute("x2", endX);
-                        firstSegment.setAttribute("y2", endY);
-
-                        currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
-                    }
-                });
-            }
+    
+                    firstSegment.setAttribute("x1", startX);
+                    firstSegment.setAttribute("y1", startY);
+                    firstSegment.setAttribute("x2", midX);
+                    firstSegment.setAttribute("y2", midY);
+    
+                    secondSegment.setAttribute("x1", midX);
+                    secondSegment.setAttribute("y1", midY);
+                    secondSegment.setAttribute("x2", endX);
+                    secondSegment.setAttribute("y2", endY);
+    
+                    currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
+                } else if (!isKnightArrow && firstSegment) {
+                    firstSegment.setAttribute("x1", startX);
+                    firstSegment.setAttribute("y1", startY);
+                    firstSegment.setAttribute("x2", endX);
+                    firstSegment.setAttribute("y2", endY);
+    
+                    currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
+                }
+            });
         }
     });
-
+    
     document.addEventListener("mouseup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;

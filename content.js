@@ -294,97 +294,6 @@ const isKnightOnSquare = (square) => {
     return false;
 };
 
-const drawKnightArrowSegments = (startSquare, endSquare, color, container) => {
-    const svgNS = "http://www.w3.org/2000/svg";
-    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
-    const startX = normalizeCoord(startSquare.col);
-    const startY = normalizeCoord(startSquare.row); 
-    const endX = normalizeCoord(endSquare.col);
-    const endY = normalizeCoord(endSquare.row);
-
-    let midX, midY;
-    if (Math.abs(startSquare.row - endSquare.row) === 2) {
-        midX = startX;
-        midY = endY;
-    } else {
-        midX = endX;
-        midY = startY;
-    }
-
-    const arrowGroup = document.createElementNS(svgNS, "g");
-    arrowGroup.classList.add("knight-arrow");
-    // NEW: Add data attributes to identify this arrow
-    arrowGroup.setAttribute('data-start', `${startSquare.row},${startSquare.col}`);
-    arrowGroup.setAttribute('data-end', `${endSquare.row},${endSquare.col}`);
-
-    const firstSegment = document.createElementNS(svgNS, "line");
-    firstSegment.setAttribute("x1", startX);
-    firstSegment.setAttribute("y1", startY);
-    firstSegment.setAttribute("x2", midX);
-    firstSegment.setAttribute("y2", midY);
-    firstSegment.setAttribute("stroke", color);
-    firstSegment.setAttribute("stroke-width", 0.165);
-    firstSegment.setAttribute("stroke-linecap", "square");
-
-    const secondSegment = document.createElementNS(svgNS, "line");
-    secondSegment.setAttribute("x1", midX);
-    secondSegment.setAttribute("y1", midY);
-    secondSegment.setAttribute("x2", endX);
-    secondSegment.setAttribute("y2", endY);
-    secondSegment.setAttribute("stroke", color);
-    secondSegment.setAttribute("stroke-width", 0.165);
-    secondSegment.setAttribute("marker-end", "url(#custom)");
-
-    arrowGroup.appendChild(firstSegment);
-    arrowGroup.appendChild(secondSegment);
-    container.appendChild(arrowGroup);
-
-    return arrowGroup;
-};
-
-
-const drawStraightArrow = (startSquare, endSquare, color, container) => {
-    const svgNS = "http://www.w3.org/2000/svg";
-    const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
-    const startX = normalizeCoord(startSquare.col);
-    const startY = normalizeCoord(startSquare.row); 
-    const endX = normalizeCoord(endSquare.col);
-    const endY = normalizeCoord(endSquare.row);
-
-    const arrowGroup = document.createElementNS(svgNS, "g");
-    arrowGroup.classList.add("straight-arrow");
-    // NEW: Add data attributes to identify this arrow
-    arrowGroup.setAttribute('data-start', `${startSquare.row},${startSquare.col}`);
-    arrowGroup.setAttribute('data-end', `${endSquare.row},${endSquare.col}`);
-
-    const line = document.createElementNS(svgNS, "line");
-    line.setAttribute("x1", startX);
-    line.setAttribute("y1", startY);
-    line.setAttribute("x2", endX);
-    line.setAttribute("y2", endY);
-    line.setAttribute("stroke", color);
-    line.setAttribute("stroke-width", 0.15625);
-    line.setAttribute("marker-end", "url(#custom)");
-    line.setAttribute("stroke-linecap", "square");
-
-    arrowGroup.appendChild(line);
-    container.appendChild(arrowGroup);
-    return arrowGroup;
-};
-
-chrome.storage.onChanged.addListener((changes) => {
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
-        const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
-        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) 
-            ? changes.arrowOpacity.newValue
-            : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
-        const updatedMoveDestColor = (changes.moveDestColor && changes.moveDestColor.newValue) || data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
-        const updatedHighlightOverlayColor = (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue) || data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
-        const updatedSelectedSquareColor = (changes.selectedSquareColor && changes.selectedSquareColor.newValue) || data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
-
-        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor, updatedHighlightOverlayColor, updatedSelectedSquareColor);
-    });
-});
 
 const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
@@ -457,6 +366,7 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
     document.head.appendChild(style);
 };
 
+
 const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
     if (!board) return;
@@ -506,7 +416,7 @@ const setupArrowContainers = () => {
         arrowOverlay.style.width = '100%';
         arrowOverlay.style.height = '100%';
         arrowOverlay.style.pointerEvents = 'none';
-        arrowOverlay.style.zIndex = '9999'; // ensures it's above pieces
+        arrowOverlay.style.zIndex = '9999'; 
         cgContainer.appendChild(arrowOverlay);
     }
 
@@ -540,7 +450,6 @@ const setupArrowContainers = () => {
         customArrowsContainer.setAttribute("class", "custom-arrows");
         customArrowsContainer.setAttribute("viewBox", "-4 -4 8 8");
         customArrowsContainer.setAttribute("preserveAspectRatio", "xMidYMid slice");
-        // Absolute positioning to overlay on top of the board
         customArrowsContainer.style.position = "absolute";
         customArrowsContainer.style.top = "0";
         customArrowsContainer.style.left = "0";
@@ -560,17 +469,13 @@ const setupArrowContainers = () => {
         currentCustomArrowContainer.style.width = "100%";
         currentCustomArrowContainer.style.height = "100%";
         currentCustomArrowContainer.style.pointerEvents = "none";
-
-        // Append after customArrowsContainer so it stacks above it
         arrowOverlay.appendChild(currentCustomArrowContainer);
     } else {
         customArrowsContainer = arrowOverlay.querySelector(".custom-arrows");
         currentCustomArrowContainer = arrowOverlay.querySelector(".current-custom-arrow");
-        // Ensure they have proper absolute positioning
         customArrowsContainer.style.position = "absolute";
         customArrowsContainer.style.top = "0";
         customArrowsContainer.style.left = "0";
-
         currentCustomArrowContainer.style.position = "absolute";
         currentCustomArrowContainer.style.top = "0";
         currentCustomArrowContainer.style.left = "0";
@@ -587,7 +492,7 @@ let lastEndSquare = null;
 let firstSegment = null; 
 let secondSegment = null; 
 let isKnightArrow = false;
-let wasKnightArrow = null; // track previous state
+let wasKnightArrow = null; 
 
 function createArrowElements(isKnight, color) {
     const svgNS = "http://www.w3.org/2000/svg";
@@ -598,7 +503,6 @@ function createArrowElements(isKnight, color) {
     }
 
     if (isKnight) {
-        // Knight arrow has two segments
         firstSegment = document.createElementNS(svgNS, "line");
         secondSegment = document.createElementNS(svgNS, "line");
 
@@ -613,7 +517,6 @@ function createArrowElements(isKnight, color) {
         currentArrowGroup.appendChild(firstSegment);
         currentArrowGroup.appendChild(secondSegment);
     } else {
-        // Straight arrow has one segment
         firstSegment = document.createElementNS(svgNS, "line");
         firstSegment.setAttribute("stroke-width", 0.165);
         firstSegment.setAttribute("marker-end", "url(#custom)");
@@ -660,12 +563,11 @@ const setupArrowDrawing = () => {
                 currentArrowGroup = null;
                 lastEndSquare = null;
             }
-            return; // Stop here, no arrow needs to be drawn
+            return; 
         }
     
         // If mouse moved to a new square, update or draw the arrow
         if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
-            console.log('test')
             lastEndSquare = currentSquare;
     
             const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
@@ -799,7 +701,6 @@ const setupArrowDrawing = () => {
 };
 
 
-
 const enableSquareHighlighting = () => {
     let wasRightMouseDown = false;
     let startSquareHighlight = null;
@@ -835,11 +736,10 @@ const enableSquareHighlighting = () => {
     });
 };
 
+
 function setCustomMarker() {
-    // Ensure we are dealing with the correct namespace
     const svgNS = "http://www.w3.org/2000/svg";
     const svgElement = document.querySelector('.cg-shapes');
-    // Locate or create a <defs> section in the SVG
     let defs = svgElement.querySelector('defs');
     if (!defs) {
       defs = document.createElementNS(svgNS, 'defs');
@@ -860,11 +760,7 @@ function setCustomMarker() {
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', 'M.3,0 V4 L3.3,2 Z');
     path.setAttribute('fill', arrowColor);
-  
-    // Append the path to the marker
     marker.appendChild(path);
-  
-    // Append the new marker to the <defs> section
     defs.appendChild(marker);
   }
 
@@ -876,8 +772,6 @@ function setupBoardObserver() {
     if (!targetNode) return;
 
     const config = { childList: true, subtree: true };
-    let isInitialized = false;
-
     const callback = (mutationsList) => {
         for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
@@ -899,6 +793,20 @@ function setupBoardObserver() {
     observer.observe(targetNode, config);
 }
 
+
+chrome.storage.onChanged.addListener((changes) => {
+    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
+        const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
+        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) 
+            ? changes.arrowOpacity.newValue
+            : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
+        const updatedMoveDestColor = (changes.moveDestColor && changes.moveDestColor.newValue) || data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
+        const updatedHighlightOverlayColor = (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue) || data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
+        const updatedSelectedSquareColor = (changes.selectedSquareColor && changes.selectedSquareColor.newValue) || data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
+
+        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor, updatedHighlightOverlayColor, updatedSelectedSquareColor);
+    });
+});
 
 
 chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {

@@ -658,12 +658,14 @@ const setupArrowDrawing = () => {
             if (currentArrowGroup) {
                 currentArrowGroup.remove(); // Remove the arrow if the end square is the same as the start square
                 currentArrowGroup = null;
+                lastEndSquare = null;
             }
             return; // Stop here, no arrow needs to be drawn
         }
     
         // If mouse moved to a new square, update or draw the arrow
         if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
+            console.log('test')
             lastEndSquare = currentSquare;
     
             const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);

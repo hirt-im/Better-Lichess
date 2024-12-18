@@ -213,7 +213,6 @@ if (siteButtons) {
     });
 }
 
-
 // Utility functions
 const isOrientationBlack = () => {
     const boardContainer = document.querySelector(".cg-wrap");
@@ -294,7 +293,7 @@ const isKnightOnSquare = (square) => {
     return false;
 };
 
-
+// Inject CSS
 const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
@@ -366,7 +365,7 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
     document.head.appendChild(style);
 };
 
-
+// Square highlighting
 const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
     if (!board) return;
@@ -397,7 +396,42 @@ const toggleSquareHighlight = (event) => {
     }
 };
 
+const enableSquareHighlighting = () => {
+    let wasRightMouseDown = false;
+    let startSquareHighlight = null;
 
+    document.addEventListener("pointerdown", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2) {
+            wasRightMouseDown = true;
+            startSquareHighlight = getSquareFromEvent(event);
+        }
+    });
+
+    // Use pointerup instead of mouseup for slightly faster response
+    document.addEventListener("pointerup", (event) => {
+        const board = document.querySelector("cg-board");
+        if (!board || !board.contains(event.target)) return;
+
+        if (event.button === 2 && wasRightMouseDown) {
+            const endSquareHighlight = getSquareFromEvent(event);
+            if (endSquareHighlight && startSquareHighlight &&
+                endSquareHighlight.row === startSquareHighlight.row &&
+                endSquareHighlight.col === startSquareHighlight.col) {
+                toggleSquareHighlight(event);
+            }
+        }
+
+        if (event.button === 2) {
+            wasRightMouseDown = false;
+            startSquareHighlight = null;
+        }
+    });
+};
+
+// Arrow container
 const setupArrowContainers = () => {
     const board = document.querySelector("cg-board");
     if (!board) return;
@@ -482,7 +516,35 @@ const setupArrowContainers = () => {
     }
 };
 
+// Custom marker for arrows
+function setCustomMarker() {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svgElement = document.querySelector('.cg-shapes');
+    let defs = svgElement.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS(svgNS, 'defs');
+      svgElement.insertBefore(defs, svgElement.firstChild);
+    }
+  
+    // Create a new <marker> element
+    const marker = document.createElementNS(svgNS, 'marker');
+    marker.setAttribute('id', 'custom');
+    marker.setAttribute('orient', 'auto');
+    marker.setAttribute('overflow', 'visible');
+    marker.setAttribute('markerWidth', '4');
+    marker.setAttribute('markerHeight', '4');
+    marker.setAttribute('refX', '2.05');
+    marker.setAttribute('refY', '2');
+  
+    // Create the <path> element for the marker shape
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M.3,0 V4 L3.3,2 Z');
+    path.setAttribute('fill', arrowColor);
+    marker.appendChild(path);
+    defs.appendChild(marker);
+};
 
+// Arrow drawing
 let dragStartSquare = null; 
 let isRightMouseDown = false; 
 let currentArrowGroup = null; 
@@ -525,7 +587,7 @@ function createArrowElements(isKnight, color) {
 
         currentArrowGroup.appendChild(firstSegment);
     }
-}
+};
 
 const setupArrowDrawing = () => {
     setupArrowContainers();
@@ -700,73 +762,7 @@ const setupArrowDrawing = () => {
     });
 };
 
-
-const enableSquareHighlighting = () => {
-    let wasRightMouseDown = false;
-    let startSquareHighlight = null;
-
-    document.addEventListener("pointerdown", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return;
-
-        if (event.button === 2) {
-            wasRightMouseDown = true;
-            startSquareHighlight = getSquareFromEvent(event);
-        }
-    });
-
-    // Use pointerup instead of mouseup for slightly faster response
-    document.addEventListener("pointerup", (event) => {
-        const board = document.querySelector("cg-board");
-        if (!board || !board.contains(event.target)) return;
-
-        if (event.button === 2 && wasRightMouseDown) {
-            const endSquareHighlight = getSquareFromEvent(event);
-            if (endSquareHighlight && startSquareHighlight &&
-                endSquareHighlight.row === startSquareHighlight.row &&
-                endSquareHighlight.col === startSquareHighlight.col) {
-                toggleSquareHighlight(event);
-            }
-        }
-
-        if (event.button === 2) {
-            wasRightMouseDown = false;
-            startSquareHighlight = null;
-        }
-    });
-};
-
-
-function setCustomMarker() {
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svgElement = document.querySelector('.cg-shapes');
-    let defs = svgElement.querySelector('defs');
-    if (!defs) {
-      defs = document.createElementNS(svgNS, 'defs');
-      svgElement.insertBefore(defs, svgElement.firstChild);
-    }
-  
-    // Create a new <marker> element
-    const marker = document.createElementNS(svgNS, 'marker');
-    marker.setAttribute('id', 'custom');
-    marker.setAttribute('orient', 'auto');
-    marker.setAttribute('overflow', 'visible');
-    marker.setAttribute('markerWidth', '4');
-    marker.setAttribute('markerHeight', '4');
-    marker.setAttribute('refX', '2.05');
-    marker.setAttribute('refY', '2');
-  
-    // Create the <path> element for the marker shape
-    const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', 'M.3,0 V4 L3.3,2 Z');
-    path.setAttribute('fill', arrowColor);
-    marker.appendChild(path);
-    defs.appendChild(marker);
-  }
-
-
-
-// Re-append arrowContainer and customMarker when puzzle board re-renders
+// Reset arrow container and marker on puzzle board reset
 function setupBoardObserver() {
     const targetNode = document.querySelector('.puzzle.puzzle-play');
     if (!targetNode) return;
@@ -793,7 +789,7 @@ function setupBoardObserver() {
     observer.observe(targetNode, config);
 }
 
-
+// Apply changes in settings
 chrome.storage.onChanged.addListener((changes) => {
     chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
         const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
@@ -808,7 +804,7 @@ chrome.storage.onChanged.addListener((changes) => {
     });
 });
 
-
+// LETS GOOOOOOOOOOOO
 chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;

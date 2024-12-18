@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better Lichess",
-  "version": "1.0.1",
+  "version": "1.1",
   "description": "Adds proper knight arrows, better square highlighting, and custom colors to Lichess.",
   "permissions": ["storage"],
   "host_permissions": ["https://lichess.org/*"],

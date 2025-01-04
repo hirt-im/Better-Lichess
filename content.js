@@ -5,7 +5,10 @@ const DEFAULT_COLOR = "#f2c218";
 const DEFAULT_OPACITY = 1.0;
 const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; 
 const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; 
-const DEFAULT_SELECTED_COLOR = "#99d8ff"; 
+const DEFAULT_SELECTED_COLOR = "#99d8ff";
+
+// We'll default "free arrows" to true 
+const DEFAULT_FREE_ARROWS = true;  
 
 // ================================
 //  Extension button and menu
@@ -87,8 +90,14 @@ if (siteButtons) {
 
         <!-- Knight Arrow Toggle -->
         <div style="display: flex; flex-direction: column; align-items: center;">
-            <label style="font: inherit; font-weight: bold;" for="knightArrowToggle">Knight Arrows</label>
-            <input type="checkbox" id="knightArrowToggle" />
+          <label style="font: inherit; font-weight: bold;" for="knightArrowToggle">Knight Arrows</label>
+          <input type="checkbox" id="knightArrowToggle" />
+        </div>
+
+        <!-- Free Arrows Toggle -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <label style="font: inherit; font-weight: bold;" for="freeArrowsToggle">Free Arrows</label>
+          <input type="checkbox" id="freeArrowsToggle" />
         </div>
 
       </div>
@@ -128,12 +137,13 @@ if (siteButtons) {
     const opacitySlider = extensionMenu.querySelector('#arrowOpacity');
     const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
     const knightArrowToggle = extensionMenu.querySelector('#knightArrowToggle');
+    const freeArrowsToggle = extensionMenu.querySelector('#freeArrowsToggle');
 
     const saveButton = extensionMenu.querySelector('#saveSettings');
     const resetButton = extensionMenu.querySelector('#resetDefaults');
 
     // ======================================
-    // RETRIEVE SETTINGS, FORCE DEFAULT KNIGHT = TRUE
+    // RETRIEVE SETTINGS
     // ======================================
     chrome.storage.sync.get([
         "arrowColor",
@@ -141,7 +151,8 @@ if (siteButtons) {
         "moveDestColor",
         "highlightOverlayColor",
         "selectedSquareColor",
-        "knightArrowEnabled"
+        "knightArrowEnabled",
+        "freeArrowsEnabled"
     ], (data) => {
         // Colors
         const savedColor = data.arrowColor || DEFAULT_COLOR;
@@ -150,13 +161,18 @@ if (siteButtons) {
         const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
         const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
-        // If knightArrowEnabled is undefined, we force it to TRUE and store it
+        // Knight Arrows
         let savedKnightArrowEnabled = data.knightArrowEnabled;
         if (savedKnightArrowEnabled === undefined) {
             savedKnightArrowEnabled = true; 
-            chrome.storage.sync.set({ knightArrowEnabled: true }, () => {
-                console.log("Forcing knightArrowEnabled = true in storage for first-time user.");
-            });
+            chrome.storage.sync.set({ knightArrowEnabled: true });
+        }
+
+        // Free Arrows
+        let savedFreeArrowsEnabled = data.freeArrowsEnabled;
+        if (savedFreeArrowsEnabled === undefined) {
+            savedFreeArrowsEnabled = DEFAULT_FREE_ARROWS; 
+            chrome.storage.sync.set({ freeArrowsEnabled: DEFAULT_FREE_ARROWS });
         }
 
         // Update inputs in the UI
@@ -175,10 +191,11 @@ if (siteButtons) {
             opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
         }
 
-        knightArrowToggle.checked = savedKnightArrowEnabled; // Check or uncheck the box
+        knightArrowToggle.checked = savedKnightArrowEnabled; 
+        freeArrowsToggle.checked = savedFreeArrowsEnabled; 
     });
 
-    // Show color picker when circles are clicked
+    // Show color pickers
     document.getElementById('arrowColorCircle').addEventListener('click', () => colorInput.click());
     document.getElementById('moveDestColorCircle').addEventListener('click', () => moveDestColorInput.click());
     document.getElementById('highlightOverlayColorCircle').addEventListener('click', () => highlightOverlayColorInput.click());
@@ -208,6 +225,7 @@ if (siteButtons) {
         const selectedSquareColor = selectedSquareColorInput.value;
         const opacity = parseFloat(opacitySlider.value);
         const knightArrowsEnabled = knightArrowToggle.checked;
+        const freeArrowsEnabled = freeArrowsToggle.checked;
 
         chrome.storage.sync.set({ 
             arrowColor: color, 
@@ -215,16 +233,8 @@ if (siteButtons) {
             moveDestColor: moveDestColor,
             highlightOverlayColor: highlightOverlayColor,
             selectedSquareColor: selectedSquareColor,
-            knightArrowEnabled: knightArrowsEnabled
-        }, () => {
-            console.log("Arrow settings saved:", { 
-                color, 
-                opacity, 
-                moveDestColor, 
-                highlightOverlayColor, 
-                selectedSquareColor,
-                knightArrowsEnabled
-            });
+            knightArrowEnabled: knightArrowsEnabled,
+            freeArrowsEnabled: freeArrowsEnabled
         });
     });
 
@@ -232,14 +242,14 @@ if (siteButtons) {
     // Reset button logic
     // ================================
     resetButton.addEventListener("click", () => {
-        // On reset, forcibly set knightArrowsEnabled to true
         chrome.storage.sync.set({ 
             arrowColor: DEFAULT_COLOR, 
             arrowOpacity: DEFAULT_OPACITY, 
             moveDestColor: DEFAULT_MOVE_DEST_COLOR, 
             highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR,
             selectedSquareColor: DEFAULT_SELECTED_COLOR,
-            knightArrowEnabled: true
+            knightArrowEnabled: true,
+            freeArrowsEnabled: DEFAULT_FREE_ARROWS
         }, () => {
             colorInput.value = DEFAULT_COLOR;
             moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
@@ -257,15 +267,7 @@ if (siteButtons) {
             }
 
             knightArrowToggle.checked = true;
-
-            console.log("Arrow settings reset to default:", { 
-                color: DEFAULT_COLOR, 
-                opacity: DEFAULT_OPACITY, 
-                moveDestColor: DEFAULT_MOVE_DEST_COLOR,
-                highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR,
-                selectedSquareColor: DEFAULT_SELECTED_COLOR,
-                knightArrowEnabled: true
-            });
+            freeArrowsToggle.checked = DEFAULT_FREE_ARROWS;
         });
     });
 }
@@ -273,6 +275,7 @@ if (siteButtons) {
 // ================================
 //  Utility functions
 // ================================
+
 const isOrientationBlack = () => {
     const boardContainer = document.querySelector(".cg-wrap");
     return boardContainer?.classList.contains("orientation-black");
@@ -293,7 +296,6 @@ const getSquareFromEvent = (event) => {
         row = 7 - row;
         col = 7 - col;
     }
-
     return { row, col };
 };
 
@@ -304,11 +306,34 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// You can remove or keep this if not needed
-const isKnightOnSquare = (square) => {
-    // ...
+// Check if squares are allowed: 
+// (1) freeArrows => always true
+// (2) if freeArrows off => row, col, diagonal, or knight-move
+//    regardless of whether "knightArrows" is on or off. 
+function isAllowedArrow(r1, c1, r2, c2, freeArrows, knightArrows) {
+    if (freeArrows) return true;
+
+    const rowDiff = Math.abs(r1 - r2);
+    const colDiff = Math.abs(c1 - c2);
+
+    // horizontal, vertical, diagonal 
+    if (r1 === r2 || c1 === c2 || (rowDiff === colDiff)) {
+        return true;
+    }
+    // even if knightArrows is OFF, still allow drawing if squares are a knight move
+    // but we'll draw it as a straight line if knightArrows = false
+    if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
+        return true;
+    }
     return false;
-};
+}
+
+// Check if it's actually a knight move
+function isKnightMove(r1, c1, r2, c2) {
+    const rowDiff = Math.abs(r1 - r2);
+    const colDiff = Math.abs(c1 - c2);
+    return ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2));
+}
 
 // ================================
 //  Inject dynamic CSS
@@ -559,20 +584,24 @@ function setCustomMarker() {
 // ================================
 let dragStartSquare = null; 
 let isRightMouseDown = false; 
+
+// The in-progress arrow
 let currentArrowGroup = null; 
-let lastEndSquare = null; 
 let firstSegment = null; 
 let secondSegment = null; 
-let isKnightArrow = false;
 let wasKnightArrow = null; 
 
+// Keep track of the last square that was "valid" for the arrow from the start
+let lastValidSquare = null; 
+
 function createArrowElements(isKnight, color) {
-    const svgNS = "http://www.w3.org/2000/svg";
     if (currentArrowGroup) {
         currentArrowGroup.innerHTML = "";
     }
+    const svgNS = "http://www.w3.org/2000/svg";
 
     if (isKnight) {
+        // L-shape, two segments
         firstSegment = document.createElementNS(svgNS, "line");
         secondSegment = document.createElementNS(svgNS, "line");
 
@@ -587,6 +616,7 @@ function createArrowElements(isKnight, color) {
         currentArrowGroup.appendChild(firstSegment);
         currentArrowGroup.appendChild(secondSegment);
     } else {
+        // Single line
         firstSegment = document.createElementNS(svgNS, "line");
         firstSegment.setAttribute("stroke-width", 0.165);
         firstSegment.setAttribute("marker-end", "url(#custom)");
@@ -594,125 +624,160 @@ function createArrowElements(isKnight, color) {
         firstSegment.setAttribute("stroke", color);
         currentArrowGroup.appendChild(firstSegment);
     }
-};
+}
 
-const setupArrowDrawing = () => {
+function isKnightMove(r1, c1, r2, c2) {
+    const rowDiff = Math.abs(r1 - r2);
+    const colDiff = Math.abs(c1 - c2);
+    return (
+        (rowDiff === 2 && colDiff === 1) ||
+        (rowDiff === 1 && colDiff === 2)
+    );
+}
+
+function setupArrowDrawing() {
     setupArrowContainers();
 
     document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 
-        if (event.button === 2) { 
-            isRightMouseDown = true; 
+        if (event.button === 2) {
+            isRightMouseDown = true;
             dragStartSquare = getSquareFromEvent(event);
-            lastEndSquare = null;
+            lastValidSquare = null;
             if (currentCustomArrowContainer) {
                 currentCustomArrowContainer.innerHTML = "";
                 currentArrowGroup = null;
                 firstSegment = null;
                 secondSegment = null;
+                wasKnightArrow = null;
             }
         }
     });
 
     document.addEventListener("mousemove", (event) => {
         if (!isRightMouseDown || !dragStartSquare) return;
-    
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
     
         const currentSquare = getSquareFromEvent(event);
         if (!currentSquare) return;
-    
-        // If user drags onto same square
-        if (currentSquare.row === dragStartSquare.row && currentSquare.col === dragStartSquare.col) {
+
+        // If user drags onto the same square
+        if (
+            currentSquare.row === dragStartSquare.row &&
+            currentSquare.col === dragStartSquare.col
+        ) {
             if (currentArrowGroup) {
                 currentArrowGroup.remove();
                 currentArrowGroup = null;
-                lastEndSquare = null;
             }
-            return; 
+            lastValidSquare = null;
+            return;
         }
-    
-        if (!lastEndSquare || 
-            lastEndSquare.row !== currentSquare.row || 
-            lastEndSquare.col !== currentSquare.col
-        ) {
-            lastEndSquare = currentSquare;
 
-            chrome.storage.sync.get(["arrowColor", "knightArrowEnabled"], (data) => {
-                const color = data.arrowColor || DEFAULT_COLOR;
-                // If user never set, default to true
-                const knightArrowsEnabled = (data.knightArrowEnabled === undefined) ? true : data.knightArrowEnabled;
-                // Check if it's a knight move
-                let shouldDrawKnight = false;
-                if (knightArrowsEnabled) {
-                    const rowDiff = Math.abs(dragStartSquare.row - currentSquare.row);
-                    const colDiff = Math.abs(dragStartSquare.col - currentSquare.col);
-                    shouldDrawKnight = (
-                        (rowDiff === 2 && colDiff === 1) ||
-                        (rowDiff === 1 && colDiff === 2)
-                    );
-                }
+        chrome.storage.sync.get(
+          ["arrowColor", "knightArrowEnabled", "freeArrowsEnabled"],
+          (data) => {
+            const color = data.arrowColor || DEFAULT_COLOR;
+            const knightArrowsEnabled = (data.knightArrowEnabled === undefined) ? true : data.knightArrowEnabled;
+            const freeArrowsEnabled = (data.freeArrowsEnabled === undefined) ? true : data.freeArrowsEnabled;
 
-                isKnightArrow = shouldDrawKnight;
+            // Check if the new square is allowed given freeArrows + knight logic
+            const allowed = isAllowedArrow(
+              dragStartSquare.row,
+              dragStartSquare.col,
+              currentSquare.row,
+              currentSquare.col,
+              freeArrowsEnabled,
+              knightArrowsEnabled
+            );
 
-                if (!currentArrowGroup) {
-                    const svgNS = "http://www.w3.org/2000/svg";
-                    currentArrowGroup = document.createElementNS(svgNS, "g");
-                    currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
-                    currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
-                    currentCustomArrowContainer.appendChild(currentArrowGroup);
-                    createArrowElements(isKnightArrow, color);
-                    wasKnightArrow = isKnightArrow;
-                } else if (wasKnightArrow !== isKnightArrow) {
-                    currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
-                    currentArrowGroup.classList.add(isKnightArrow ? "knight-arrow" : "straight-arrow");
-                    createArrowElements(isKnightArrow, color);
-                    wasKnightArrow = isKnightArrow;
-                }
-
-                // Update arrow coords
-                const normalizeCoord = (idx) => isOrientationBlack() ? 3.5 - idx : idx - 3.5;
-                const startX = normalizeCoord(dragStartSquare.col);
-                const startY = normalizeCoord(dragStartSquare.row); 
-                const endX = normalizeCoord(currentSquare.col);
-                const endY = normalizeCoord(currentSquare.row);
-
-                if (isKnightArrow && firstSegment && secondSegment) {
-                    let midX, midY;
-                    if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
-                        midX = startX;
-                        midY = endY;
-                    } else {
-                        midX = endX;
-                        midY = startY;
+            if (!allowed) {
+                // If not allowed AND we never had a valid square yet, remove arrow
+                if (!lastValidSquare) {
+                    if (currentArrowGroup) {
+                        currentArrowGroup.remove();
+                        currentArrowGroup = null;
                     }
-                    firstSegment.setAttribute("x1", startX);
-                    firstSegment.setAttribute("y1", startY);
-                    firstSegment.setAttribute("x2", midX);
-                    firstSegment.setAttribute("y2", midY);
-
-                    secondSegment.setAttribute("x1", midX);
-                    secondSegment.setAttribute("y1", midY);
-                    secondSegment.setAttribute("x2", endX);
-                    secondSegment.setAttribute("y2", endY);
-
-                    currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
-                } else if (!isKnightArrow && firstSegment) {
-                    // Straight arrow
-                    firstSegment.setAttribute("x1", startX);
-                    firstSegment.setAttribute("y1", startY);
-                    firstSegment.setAttribute("x2", endX);
-                    firstSegment.setAttribute("y2", endY);
-
-                    currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
                 }
-            });
-        }
+                // If we already had a valid square, do nothing (keep arrow there)
+                return;
+            }
+
+            // We do have an allowed square
+            lastValidSquare = currentSquare;
+
+            // Check if it's a knight move
+            const isActuallyKnightMove = isKnightMove(
+              dragStartSquare.row,
+              dragStartSquare.col,
+              currentSquare.row,
+              currentSquare.col
+            );
+
+            // We only do L-shape if user wants knight arrows enabled
+            // Otherwise, we do a single line, even if it's a knight move
+            const shouldDrawKnightArrow = (knightArrowsEnabled && isActuallyKnightMove);
+
+            if (!currentArrowGroup) {
+                const svgNS = "http://www.w3.org/2000/svg";
+                currentArrowGroup = document.createElementNS(svgNS, "g");
+                currentArrowGroup.classList.add(shouldDrawKnightArrow ? "knight-arrow" : "straight-arrow");
+                currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
+                currentCustomArrowContainer.appendChild(currentArrowGroup);
+                createArrowElements(shouldDrawKnightArrow, color);
+                wasKnightArrow = shouldDrawKnightArrow;
+            } 
+            else if (wasKnightArrow !== shouldDrawKnightArrow) {
+                currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
+                currentArrowGroup.classList.add(shouldDrawKnightArrow ? "knight-arrow" : "straight-arrow");
+                createArrowElements(shouldDrawKnightArrow, color);
+                wasKnightArrow = shouldDrawKnightArrow;
+            }
+
+            // Now set line coordinates
+            const normalizeCoord = (idx) => isOrientationBlack() ? 3.5 - idx : idx - 3.5;
+            const startX = normalizeCoord(dragStartSquare.col);
+            const startY = normalizeCoord(dragStartSquare.row);
+            const endX = normalizeCoord(currentSquare.col);
+            const endY = normalizeCoord(currentSquare.row);
+
+            if (shouldDrawKnightArrow && firstSegment && secondSegment) {
+                // L-shape: two segments
+                let midX, midY;
+                // Decide how we break into two segments:
+                if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
+                    midX = startX;
+                    midY = endY;
+                } else {
+                    midX = endX;
+                    midY = startY;
+                }
+                firstSegment.setAttribute("x1", startX);
+                firstSegment.setAttribute("y1", startY);
+                firstSegment.setAttribute("x2", midX);
+                firstSegment.setAttribute("y2", midY);
+
+                secondSegment.setAttribute("x1", midX);
+                secondSegment.setAttribute("y1", midY);
+                secondSegment.setAttribute("x2", endX);
+                secondSegment.setAttribute("y2", endY);
+
+                currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
+            } else if (!shouldDrawKnightArrow && firstSegment) {
+                // Single line
+                firstSegment.setAttribute("x1", startX);
+                firstSegment.setAttribute("y1", startY);
+                firstSegment.setAttribute("x2", endX);
+                firstSegment.setAttribute("y2", endY);
+
+                currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
+            }
+        });
     });
-    
+
     document.addEventListener("mouseup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
@@ -723,6 +788,7 @@ const setupArrowDrawing = () => {
                 const end = currentArrowGroup.getAttribute('data-end');
 
                 if (start && end) {
+                    // If an arrow with same start/end is found, remove it
                     const existingArrow = customArrowsContainer.querySelector(`g[data-start="${start}"][data-end="${end}"]`);
                     if (existingArrow) {
                         existingArrow.remove();
@@ -732,6 +798,7 @@ const setupArrowDrawing = () => {
                     }
                 }
 
+                // Clear in-progress arrow
                 if (currentCustomArrowContainer) {
                     currentCustomArrowContainer.innerHTML = "";
                 }
@@ -739,14 +806,14 @@ const setupArrowDrawing = () => {
                 firstSegment = null;
                 secondSegment = null;
                 wasKnightArrow = null;
+                lastValidSquare = null;
             });
         }
     
         if (event.button === 2) {
             isRightMouseDown = false;
             dragStartSquare = null;
-            lastEndSquare = null;
-            isKnightArrow = false;
+            lastValidSquare = null;
         }
     });
 
@@ -762,6 +829,7 @@ const setupArrowDrawing = () => {
             firstSegment = null;
             secondSegment = null;
             wasKnightArrow = null;
+            lastValidSquare = null;
         }
 
         // remove highlights
@@ -774,7 +842,7 @@ const setupArrowDrawing = () => {
             event.preventDefault();
         }
     });
-};
+}
 
 // ================================
 //  Board observer for puzzle resets

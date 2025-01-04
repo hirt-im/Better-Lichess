@@ -7,8 +7,7 @@ const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d";
 const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; 
 const DEFAULT_SELECTED_COLOR = "#99d8ff";
 
-// We'll default "free arrows" to true 
-const DEFAULT_FREE_ARROWS = true;  
+const DEFAULT_FREE_ARROWS = true;  // If free arrows is ON, no snapping
 
 // ================================
 //  Extension button and menu
@@ -154,28 +153,25 @@ if (siteButtons) {
         "knightArrowEnabled",
         "freeArrowsEnabled"
     ], (data) => {
-        // Colors
         const savedColor = data.arrowColor || DEFAULT_COLOR;
         const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
         const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
         const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
         const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
-        // Knight Arrows
         let savedKnightArrowEnabled = data.knightArrowEnabled;
         if (savedKnightArrowEnabled === undefined) {
             savedKnightArrowEnabled = true; 
             chrome.storage.sync.set({ knightArrowEnabled: true });
         }
 
-        // Free Arrows
         let savedFreeArrowsEnabled = data.freeArrowsEnabled;
         if (savedFreeArrowsEnabled === undefined) {
             savedFreeArrowsEnabled = DEFAULT_FREE_ARROWS; 
             chrome.storage.sync.set({ freeArrowsEnabled: DEFAULT_FREE_ARROWS });
         }
 
-        // Update inputs in the UI
+        // Update UI
         colorInput.value = savedColor;
         moveDestColorInput.value = savedMoveDestColor;
         highlightOverlayColorInput.value = savedHighlightOverlayColor;
@@ -195,7 +191,7 @@ if (siteButtons) {
         freeArrowsToggle.checked = savedFreeArrowsEnabled; 
     });
 
-    // Show color pickers
+    // Show color pickers when circle is clicked
     document.getElementById('arrowColorCircle').addEventListener('click', () => colorInput.click());
     document.getElementById('moveDestColorCircle').addEventListener('click', () => moveDestColorInput.click());
     document.getElementById('highlightOverlayColorCircle').addEventListener('click', () => highlightOverlayColorInput.click());
@@ -275,7 +271,6 @@ if (siteButtons) {
 // ================================
 //  Utility functions
 // ================================
-
 const isOrientationBlack = () => {
     const boardContainer = document.querySelector(".cg-wrap");
     return boardContainer?.classList.contains("orientation-black");
@@ -306,33 +301,110 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Check if squares are allowed: 
-// (1) freeArrows => always true
-// (2) if freeArrows off => row, col, diagonal, or knight-move
-//    regardless of whether "knightArrows" is on or off. 
-function isAllowedArrow(r1, c1, r2, c2, freeArrows, knightArrows) {
-    if (freeArrows) return true;
-
-    const rowDiff = Math.abs(r1 - r2);
-    const colDiff = Math.abs(c1 - c2);
-
-    // horizontal, vertical, diagonal 
-    if (r1 === r2 || c1 === c2 || (rowDiff === colDiff)) {
-        return true;
-    }
-    // even if knightArrows is OFF, still allow drawing if squares are a knight move
-    // but we'll draw it as a straight line if knightArrows = false
-    if ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2)) {
-        return true;
-    }
-    return false;
-}
-
-// Check if it's actually a knight move
+// Are we exactly a knight's move?
 function isKnightMove(r1, c1, r2, c2) {
     const rowDiff = Math.abs(r1 - r2);
     const colDiff = Math.abs(c1 - c2);
-    return ((rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2));
+    return (
+        (rowDiff === 2 && colDiff === 1) ||
+        (rowDiff === 1 && colDiff === 2)
+    );
+}
+
+/**
+ * If freeArrows is ON → always allowed.
+ * If freeArrows is OFF, we do these steps:
+ *   1) Check if EXACT knight move → allowed
+ *   2) If not knight, we compute the angle from (0,0) to (colDiff, rowDiff).
+ *   3) We snap that angle to the nearest 0°, 90°, 180°, or ±45°, ±135°, etc. (8 directions).
+ *   4) The resulting snapped direction we convert into squares.
+ *   5) Return that snapped square. If it’s the same as the start, it’s invalid.
+ */
+function snapDirection(r1, c1, r2, c2, freeArrows) {
+    if (freeArrows) {
+        return { row: r2, col: c2 }; // no snapping
+    }
+
+    const rowDiff = r2 - r1;
+    const colDiff = c2 - c1;
+
+    // Knight moves override angle snapping
+    if (isKnightMove(r1, c1, r2, c2)) {
+        return { row: r2, col: c2 };
+    }
+
+    // If rowDiff=0 & colDiff=0 we skip it → invalid anyway
+    if (rowDiff === 0 && colDiff === 0) {
+        return { row: r2, col: c2 }; 
+    }
+
+    // Compute angle in degrees [-180..180]
+    const angleRad = Math.atan2(rowDiff, colDiff); // y= rowDiff, x= colDiff
+    let angleDeg = angleRad * (180 / Math.PI);
+
+    // We have 8 directions: -180°, -135°, -90°, -45°, 0°, 45°, 90°, 135° (then 180 is same as -180)
+    // We'll define an array of "targets" in degrees:
+    const directions = [ -180, -135, -90, -45, 0, 45, 90, 135 ];
+    // We'll find which one is closest
+    let bestDir = 0;
+    let bestDist = 999999;
+    for (const d of directions) {
+        // difference in angle
+        let diff = Math.abs(angleDeg - d);
+        // handle wraparound near ±180
+        if (diff > 180) diff = 360 - diff;
+        if (diff < bestDist) {
+            bestDist = diff;
+            bestDir = d;
+        }
+    }
+
+    // Now we have a snapped direction (bestDir)
+    // We'll define the final square by using whichever is horizontal, vertical, diagonal
+    // so row=0 col=? or row=? col=0 or row=± col=±
+    // We'll keep the same magnitude in squares
+    const distance = Math.sqrt(rowDiff*rowDiff + colDiff*colDiff);
+    // integer or partial squares? We'll keep the integer rowDiff, colDiff magnitude
+    // but we only allow exact squares. We do a quick approach:
+    //  - If bestDir = 0 => row=0, col= colDiff in sign
+    //  - If bestDir = ±90 => col=0, row= rowDiff in sign
+    //  - If bestDir = ±45, ±135 => abs(row)= abs(col)
+    // Let final row/col = ???
+
+    let finalRow = r1;
+    let finalCol = c1;
+
+    // define the sign for row/col
+    const signRow = (rowDiff >= 0) ? 1 : -1;
+    const signCol = (colDiff >= 0) ? 1 : -1;
+    const steps = Math.round(distance); // how many squares from start (approx)
+
+    // We'll create a little helper for diagonal:
+    function toDiagonal() {
+        // whichever is bigger rowDiff or colDiff in magnitude => that is steps
+        let big = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+        return {
+            row: r1 + signRow * big,
+            col: c1 + signCol * big
+        };
+    }
+
+    if (bestDir === 0 || bestDir === 180 || bestDir === -180) {
+        // purely horizontal
+        finalRow = r1; 
+        // keep the same "steps" horizontally
+        finalCol = c1 + signCol * steps;
+    } else if (bestDir === 90 || bestDir === -90) {
+        // purely vertical
+        finalCol = c1;
+        finalRow = r1 + signRow * steps;
+    } else {
+        // diagonal angles => 45°, -45°, 135°, -135°
+        const diag = toDiagonal();
+        finalRow = diag.row;
+        finalCol = diag.col;
+    }
+    return { row: finalRow, col: finalCol };
 }
 
 // ================================
@@ -590,8 +662,6 @@ let currentArrowGroup = null;
 let firstSegment = null; 
 let secondSegment = null; 
 let wasKnightArrow = null; 
-
-// Keep track of the last square that was "valid" for the arrow from the start
 let lastValidSquare = null; 
 
 function createArrowElements(isKnight, color) {
@@ -601,7 +671,6 @@ function createArrowElements(isKnight, color) {
     const svgNS = "http://www.w3.org/2000/svg";
 
     if (isKnight) {
-        // L-shape, two segments
         firstSegment = document.createElementNS(svgNS, "line");
         secondSegment = document.createElementNS(svgNS, "line");
 
@@ -626,6 +695,7 @@ function createArrowElements(isKnight, color) {
     }
 }
 
+// Tells us if it's a knight move
 function isKnightMove(r1, c1, r2, c2) {
     const rowDiff = Math.abs(r1 - r2);
     const colDiff = Math.abs(c1 - c2);
@@ -661,13 +731,13 @@ function setupArrowDrawing() {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
     
-        const currentSquare = getSquareFromEvent(event);
-        if (!currentSquare) return;
+        const pointerSquare = getSquareFromEvent(event);
+        if (!pointerSquare) return;
 
         // If user drags onto the same square
         if (
-            currentSquare.row === dragStartSquare.row &&
-            currentSquare.col === dragStartSquare.col
+            pointerSquare.row === dragStartSquare.row &&
+            pointerSquare.col === dragStartSquare.col
         ) {
             if (currentArrowGroup) {
                 currentArrowGroup.remove();
@@ -684,98 +754,116 @@ function setupArrowDrawing() {
             const knightArrowsEnabled = (data.knightArrowEnabled === undefined) ? true : data.knightArrowEnabled;
             const freeArrowsEnabled = (data.freeArrowsEnabled === undefined) ? true : data.freeArrowsEnabled;
 
-            // Check if the new square is allowed given freeArrows + knight logic
-            const allowed = isAllowedArrow(
-              dragStartSquare.row,
+            // Snap the pointer to whichever direction is closest 
+            // ... unless it's exactly a knight move
+            const snapped = snapDirection(
+              dragStartSquare.row, 
               dragStartSquare.col,
-              currentSquare.row,
-              currentSquare.col,
-              freeArrowsEnabled,
-              knightArrowsEnabled
+              pointerSquare.row,
+              pointerSquare.col,
+              freeArrowsEnabled
             );
 
-            if (!allowed) {
-                // If not allowed AND we never had a valid square yet, remove arrow
+            // If the snapped square is the same as start => invalid
+            if (
+                snapped.row === dragStartSquare.row &&
+                snapped.col === dragStartSquare.col
+            ) {
+                // Not valid
                 if (!lastValidSquare) {
                     if (currentArrowGroup) {
                         currentArrowGroup.remove();
                         currentArrowGroup = null;
                     }
                 }
-                // If we already had a valid square, do nothing (keep arrow there)
                 return;
             }
 
-            // We do have an allowed square
-            lastValidSquare = currentSquare;
+            // Mark that we can point to this "snapped" square
+            const newSquare = { row: snapped.row, col: snapped.col };
 
-            // Check if it's a knight move
-            const isActuallyKnightMove = isKnightMove(
+            // If it's the same as last valid, no big changes
+            if (
+                lastValidSquare &&
+                lastValidSquare.row === newSquare.row &&
+                lastValidSquare.col === newSquare.col
+            ) {
+                // no update needed
+                return;
+            }
+
+            lastValidSquare = newSquare;
+
+            // Check if it's actually a knight move 
+            const actuallyKnight = isKnightMove(
               dragStartSquare.row,
               dragStartSquare.col,
-              currentSquare.row,
-              currentSquare.col
+              newSquare.row,
+              newSquare.col
             );
+            // If user wants knight arrows & it's a knight move → L shape
+            // Else single line
+            const shouldDrawKnight = (knightArrowsEnabled && actuallyKnight);
 
-            // We only do L-shape if user wants knight arrows enabled
-            // Otherwise, we do a single line, even if it's a knight move
-            const shouldDrawKnightArrow = (knightArrowsEnabled && isActuallyKnightMove);
-
+            // Make arrow group if needed
             if (!currentArrowGroup) {
                 const svgNS = "http://www.w3.org/2000/svg";
                 currentArrowGroup = document.createElementNS(svgNS, "g");
-                currentArrowGroup.classList.add(shouldDrawKnightArrow ? "knight-arrow" : "straight-arrow");
+                currentArrowGroup.classList.add(shouldDrawKnight ? "knight-arrow" : "straight-arrow");
                 currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
                 currentCustomArrowContainer.appendChild(currentArrowGroup);
-                createArrowElements(shouldDrawKnightArrow, color);
-                wasKnightArrow = shouldDrawKnightArrow;
-            } 
-            else if (wasKnightArrow !== shouldDrawKnightArrow) {
+                createArrowElements(shouldDrawKnight, color);
+                wasKnightArrow = shouldDrawKnight;
+            } else if (wasKnightArrow !== shouldDrawKnight) {
                 currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
-                currentArrowGroup.classList.add(shouldDrawKnightArrow ? "knight-arrow" : "straight-arrow");
-                createArrowElements(shouldDrawKnightArrow, color);
-                wasKnightArrow = shouldDrawKnightArrow;
+                currentArrowGroup.classList.add(shouldDrawKnight ? "knight-arrow" : "straight-arrow");
+                createArrowElements(shouldDrawKnight, color);
+                wasKnightArrow = shouldDrawKnight;
             }
 
             // Now set line coordinates
             const normalizeCoord = (idx) => isOrientationBlack() ? 3.5 - idx : idx - 3.5;
             const startX = normalizeCoord(dragStartSquare.col);
             const startY = normalizeCoord(dragStartSquare.row);
-            const endX = normalizeCoord(currentSquare.col);
-            const endY = normalizeCoord(currentSquare.row);
+            const endX = normalizeCoord(newSquare.col);
+            const endY = normalizeCoord(newSquare.row);
 
-            if (shouldDrawKnightArrow && firstSegment && secondSegment) {
-                // L-shape: two segments
-                let midX, midY;
-                // Decide how we break into two segments:
-                if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
-                    midX = startX;
-                    midY = endY;
+            if (shouldDrawKnight && firstSegment && secondSegment) {
+                // L-shape with two segments
+                if (Math.abs(dragStartSquare.row - newSquare.row) === 2) {
+                    // vertical 2, horizontal 1
+                    firstSegment.setAttribute("x1", startX);
+                    firstSegment.setAttribute("y1", startY);
+                    firstSegment.setAttribute("x2", startX);
+                    firstSegment.setAttribute("y2", endY);
+
+                    secondSegment.setAttribute("x1", startX);
+                    secondSegment.setAttribute("y1", endY);
+                    secondSegment.setAttribute("x2", endX);
+                    secondSegment.setAttribute("y2", endY);
                 } else {
-                    midX = endX;
-                    midY = startY;
+                    // horizontal 2, vertical 1
+                    firstSegment.setAttribute("x1", startX);
+                    firstSegment.setAttribute("y1", startY);
+                    firstSegment.setAttribute("x2", endX);
+                    firstSegment.setAttribute("y2", startY);
+
+                    secondSegment.setAttribute("x1", endX);
+                    secondSegment.setAttribute("y1", startY);
+                    secondSegment.setAttribute("x2", endX);
+                    secondSegment.setAttribute("y2", endY);
                 }
-                firstSegment.setAttribute("x1", startX);
-                firstSegment.setAttribute("y1", startY);
-                firstSegment.setAttribute("x2", midX);
-                firstSegment.setAttribute("y2", midY);
-
-                secondSegment.setAttribute("x1", midX);
-                secondSegment.setAttribute("y1", midY);
-                secondSegment.setAttribute("x2", endX);
-                secondSegment.setAttribute("y2", endY);
-
-                currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
-            } else if (!shouldDrawKnightArrow && firstSegment) {
+            } else if (!shouldDrawKnight && firstSegment) {
                 // Single line
                 firstSegment.setAttribute("x1", startX);
                 firstSegment.setAttribute("y1", startY);
                 firstSegment.setAttribute("x2", endX);
                 firstSegment.setAttribute("y2", endY);
-
-                currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
             }
-        });
+
+            currentArrowGroup.setAttribute('data-end', `${newSquare.row},${newSquare.col}`);
+          }
+        );
     });
 
     document.addEventListener("mouseup", (event) => {

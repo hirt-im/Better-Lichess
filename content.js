@@ -1,12 +1,18 @@
+// ================================
+// Default Values
+// ================================
 const DEFAULT_COLOR = "#f2c218";
 const DEFAULT_OPACITY = 1.0;
 const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; 
 const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; 
 const DEFAULT_SELECTED_COLOR = "#99d8ff"; 
 
-// Extension button and menu
+// ================================
+//  Extension button and menu
+// ================================
 const siteButtons = document.querySelector('.site-buttons');
 if (siteButtons) {
+    // Create the "Extension Settings" button
     const extensionBtn = document.createElement('button');
     extensionBtn.id = 'extension-settings-toggle';
     extensionBtn.className = 'toggle link';
@@ -19,7 +25,7 @@ if (siteButtons) {
     // Create a container for the settings menu
     const extensionMenu = document.createElement('div');
     extensionMenu.id = 'extension-menu';
-    extensionMenu.style.display = 'none'; // Hidden by default
+    extensionMenu.style.display = 'none';
     extensionMenu.style.position = 'absolute';
     extensionMenu.style.right = '20px';
     extensionMenu.style.top = '50px';
@@ -30,6 +36,9 @@ if (siteButtons) {
     extensionMenu.style.zIndex = '999999';
     extensionMenu.style.color = '#e3e3e3';
 
+    // ================================
+    //  Settings Menu HTML
+    // ================================
     extensionMenu.innerHTML = `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-family: sans-serif;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
@@ -76,6 +85,12 @@ if (siteButtons) {
           <input type="range" id="arrowOpacity" min="0" max="1" step=".01" style="width: 120px; padding: 0;" />
         </div>
 
+        <!-- Knight Arrow Toggle -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <label style="font: inherit; font-weight: bold;" for="knightArrowToggle">Knight Arrows</label>
+            <input type="checkbox" id="knightArrowToggle" />
+        </div>
+
       </div>
         
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
@@ -91,11 +106,10 @@ if (siteButtons) {
 
     document.body.appendChild(extensionMenu);
 
+    // Hide menu if user clicks outside
     document.addEventListener('click', (event) => {
         const isClickInsideMenu = extensionMenu.contains(event.target);
         const isClickOnButton = extensionBtn.contains(event.target);
-    
-        // If the click is outside the menu and not on the button, hide the menu
         if (!isClickInsideMenu && !isClickOnButton) {
             extensionMenu.style.display = 'none';
         }
@@ -106,29 +120,51 @@ if (siteButtons) {
         extensionMenu.style.display = (extensionMenu.style.display === 'none') ? 'block' : 'none';
     });
 
+    // Grab references to the inputs
     const colorInput = extensionMenu.querySelector('#arrowColor');
     const moveDestColorInput = extensionMenu.querySelector('#moveDestColor');
     const highlightOverlayColorInput = extensionMenu.querySelector('#highlightOverlayColor');
     const selectedSquareColorInput = extensionMenu.querySelector('#selectedSquareColor');
     const opacitySlider = extensionMenu.querySelector('#arrowOpacity');
     const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
+    const knightArrowToggle = extensionMenu.querySelector('#knightArrowToggle');
+
     const saveButton = extensionMenu.querySelector('#saveSettings');
     const resetButton = extensionMenu.querySelector('#resetDefaults');
 
-    // Retrieve saved settings
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
+    // ======================================
+    // RETRIEVE SETTINGS, FORCE DEFAULT KNIGHT = TRUE
+    // ======================================
+    chrome.storage.sync.get([
+        "arrowColor",
+        "arrowOpacity",
+        "moveDestColor",
+        "highlightOverlayColor",
+        "selectedSquareColor",
+        "knightArrowEnabled"
+    ], (data) => {
+        // Colors
         const savedColor = data.arrowColor || DEFAULT_COLOR;
         const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
         const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
         const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
         const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
+        // If knightArrowEnabled is undefined, we force it to TRUE and store it
+        let savedKnightArrowEnabled = data.knightArrowEnabled;
+        if (savedKnightArrowEnabled === undefined) {
+            savedKnightArrowEnabled = true; 
+            chrome.storage.sync.set({ knightArrowEnabled: true }, () => {
+                console.log("Forcing knightArrowEnabled = true in storage for first-time user.");
+            });
+        }
+
+        // Update inputs in the UI
         colorInput.value = savedColor;
         moveDestColorInput.value = savedMoveDestColor;
         highlightOverlayColorInput.value = savedHighlightOverlayColor;
         selectedSquareColorInput.value = savedSelectedSquareColor;
 
-        // Update the circle backgrounds
         document.getElementById('arrowColorCircle').style.backgroundColor = savedColor;
         document.getElementById('moveDestColorCircle').style.backgroundColor = savedMoveDestColor;
         document.getElementById('highlightOverlayColorCircle').style.backgroundColor = savedHighlightOverlayColor;
@@ -138,9 +174,11 @@ if (siteButtons) {
         if (opacityValueDisplay) {
             opacityValueDisplay.textContent = parseFloat(savedOpacity).toFixed(2);
         }
+
+        knightArrowToggle.checked = savedKnightArrowEnabled; // Check or uncheck the box
     });
 
-    // Show color picker when the circles are clicked
+    // Show color picker when circles are clicked
     document.getElementById('arrowColorCircle').addEventListener('click', () => colorInput.click());
     document.getElementById('moveDestColorCircle').addEventListener('click', () => moveDestColorInput.click());
     document.getElementById('highlightOverlayColorCircle').addEventListener('click', () => highlightOverlayColorInput.click());
@@ -160,33 +198,48 @@ if (siteButtons) {
         document.getElementById('selectedSquareColorCircle').style.backgroundColor = selectedSquareColorInput.value;
     });
 
+    // ================================
     // Save button logic
+    // ================================
     saveButton.addEventListener("click", () => {
         const color = colorInput.value;
         const moveDestColor = moveDestColorInput.value;
         const highlightOverlayColor = highlightOverlayColorInput.value;
         const selectedSquareColor = selectedSquareColorInput.value;
         const opacity = parseFloat(opacitySlider.value);
+        const knightArrowsEnabled = knightArrowToggle.checked;
 
         chrome.storage.sync.set({ 
             arrowColor: color, 
             arrowOpacity: opacity, 
             moveDestColor: moveDestColor,
             highlightOverlayColor: highlightOverlayColor,
-            selectedSquareColor: selectedSquareColor
+            selectedSquareColor: selectedSquareColor,
+            knightArrowEnabled: knightArrowsEnabled
         }, () => {
-            console.log("Arrow settings saved:", { color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor });
+            console.log("Arrow settings saved:", { 
+                color, 
+                opacity, 
+                moveDestColor, 
+                highlightOverlayColor, 
+                selectedSquareColor,
+                knightArrowsEnabled
+            });
         });
     });
 
-    // Reset to default logic
+    // ================================
+    // Reset button logic
+    // ================================
     resetButton.addEventListener("click", () => {
+        // On reset, forcibly set knightArrowsEnabled to true
         chrome.storage.sync.set({ 
             arrowColor: DEFAULT_COLOR, 
             arrowOpacity: DEFAULT_OPACITY, 
             moveDestColor: DEFAULT_MOVE_DEST_COLOR, 
             highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR,
-            selectedSquareColor: DEFAULT_SELECTED_COLOR
+            selectedSquareColor: DEFAULT_SELECTED_COLOR,
+            knightArrowEnabled: true
         }, () => {
             colorInput.value = DEFAULT_COLOR;
             moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
@@ -202,18 +255,24 @@ if (siteButtons) {
             if (opacityValueDisplay) {
                 opacityValueDisplay.textContent = DEFAULT_OPACITY.toFixed(2);
             }
+
+            knightArrowToggle.checked = true;
+
             console.log("Arrow settings reset to default:", { 
                 color: DEFAULT_COLOR, 
                 opacity: DEFAULT_OPACITY, 
                 moveDestColor: DEFAULT_MOVE_DEST_COLOR,
                 highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR,
-                selectedSquareColor: DEFAULT_SELECTED_COLOR
+                selectedSquareColor: DEFAULT_SELECTED_COLOR,
+                knightArrowEnabled: true
             });
         });
     });
 }
 
-// Utility functions
+// ================================
+//  Utility functions
+// ================================
 const isOrientationBlack = () => {
     const boardContainer = document.querySelector(".cg-wrap");
     return boardContainer?.classList.contains("orientation-black");
@@ -245,55 +304,15 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// You can remove or keep this if not needed
 const isKnightOnSquare = (square) => {
-    const boards = document.querySelectorAll("cg-board");
-    if (boards.length === 0) {
-        console.warn("No cg-board elements found.");
-        return false;
-    }
-
-    for (const board of boards) {
-        const boardContainer = board.closest(".cg-wrap");
-        const isBlackOrientation = boardContainer?.classList.contains("orientation-black") || false;
-        const knightPieces = board.querySelectorAll("piece[class*='knight']");
-
-        if (knightPieces.length === 0) continue;
-
-        const boardRect = board.getBoundingClientRect();
-        const squareWidth = boardRect.width / 8;
-        const squareHeight = boardRect.height / 8;
-        const threshold = 5;
-        
-        let expectedX = square.col * squareWidth;
-        let expectedY = square.row * squareHeight;
-
-        if (isBlackOrientation) {
-            expectedX = (7 - square.col) * squareWidth;
-            expectedY = (7 - square.row) * squareHeight;
-        }
-
-        for (const piece of knightPieces) {
-            const transform = piece.style.transform;
-            if (!transform) continue;
-            const matches = transform.match(/translate\\(([\d.]+)px,\\s*([\d.]+)px\\)/);
-            if (!matches) continue;
-
-            const pieceX = parseFloat(matches[1]);
-            const pieceY = parseFloat(matches[2]);
-
-            const xMatch = Math.abs(pieceX - expectedX) <= threshold;
-            const yMatch = Math.abs(pieceY - expectedY) <= threshold;
-
-            if (xMatch && yMatch) {
-                return true;
-            }
-        }
-    }
-
+    // ...
     return false;
 };
 
-// Inject CSS
+// ================================
+//  Inject dynamic CSS
+// ================================
 const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
@@ -330,42 +349,36 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
         cg-container .cg-shapes {
             opacity: ${opacity} !important;
         }
-
-        .arrow-overlay{
+        .arrow-overlay {
             opacity: ${opacity} !important;
         }
-        
         input::-webkit-color-swatch {
             border: none;
         }
         .cg-shapes g line {
             visibility: hidden !important;
         }
-
         .cg-shapes g[cgHash*="paleBlue"] line {
             visibility: visible !important;
         }
-
         .cg-shapes g[cgHash*="paleBlue"] line {
             stroke: ${selectedSquareColor} !important;
             fill: ${selectedSquareColor} !important;
         }
-
         marker#arrowhead-pb path {
             fill: ${selectedSquareColor} !important;
         }
-
-        
     `;
 
     const style = document.createElement("style");
     style.id = "dynamicArrowStyles";
     style.textContent = css;
-
     document.head.appendChild(style);
 };
 
-// Square highlighting
+// ================================
+//  Square highlighting
+// ================================
 const toggleSquareHighlight = (event) => {
     const board = document.querySelector("cg-board");
     if (!board) return;
@@ -380,7 +393,7 @@ const toggleSquareHighlight = (event) => {
     const transform = `translate(${col * squareSize}px, ${row * squareSize}px)`;
     const highlightClass = "highlight-overlay";
 
-    const existingHighlight = Array.from(board.querySelectorAll(`.${highlightClass}`)).find(
+    const existingHighlight = [...board.querySelectorAll(`.${highlightClass}`)].find(
         (highlight) => highlight.style.transform === transform
     );
 
@@ -403,14 +416,12 @@ const enableSquareHighlighting = () => {
     document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
-
         if (event.button === 2) {
             wasRightMouseDown = true;
             startSquareHighlight = getSquareFromEvent(event);
         }
     });
 
-    // Use pointerup instead of mouseup for slightly faster response
     document.addEventListener("pointerup", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
@@ -423,7 +434,6 @@ const enableSquareHighlighting = () => {
                 toggleSquareHighlight(event);
             }
         }
-
         if (event.button === 2) {
             wasRightMouseDown = false;
             startSquareHighlight = null;
@@ -431,15 +441,18 @@ const enableSquareHighlighting = () => {
     });
 };
 
-// Arrow container
+// ================================
+//  Arrow containers
+// ================================
+let customArrowsContainer = null;
+let currentCustomArrowContainer = null;
+
 const setupArrowContainers = () => {
     const board = document.querySelector("cg-board");
     if (!board) return;
-
     const cgContainer = board.closest("cg-container");
     if (!cgContainer) return;
 
-    // Create arrow overlay if not present
     let arrowOverlay = cgContainer.querySelector(".arrow-overlay");
     if (!arrowOverlay) {
         arrowOverlay = document.createElement('div');
@@ -454,7 +467,6 @@ const setupArrowContainers = () => {
         cgContainer.appendChild(arrowOverlay);
     }
 
-    // Create defs if not present
     let defs = cgContainer.querySelector("defs#arrowheads");
     if (!defs) {
         defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
@@ -469,7 +481,6 @@ const setupArrowContainers = () => {
         marker.setAttribute("refY", "2");
 
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        // path.setAttribute("d", "M0,0 V4 L3,2 Z");
         path.setAttribute("d", "M0,0 V4 L3.5,2 Z");
         marker.appendChild(path);
 
@@ -477,9 +488,7 @@ const setupArrowContainers = () => {
         cgContainer.appendChild(defs);
     }
 
-    // Create or select the custom arrows containers
     if (!arrowOverlay.querySelector(".custom-arrows")) {
-        // Custom Arrows Container
         customArrowsContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         customArrowsContainer.setAttribute("class", "custom-arrows");
         customArrowsContainer.setAttribute("viewBox", "-4 -4 8 8");
@@ -492,7 +501,6 @@ const setupArrowContainers = () => {
         customArrowsContainer.style.pointerEvents = "none";
         arrowOverlay.appendChild(customArrowsContainer);
 
-        // Current Custom Arrow Container
         currentCustomArrowContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         currentCustomArrowContainer.setAttribute("class", "current-custom-arrow");
         currentCustomArrowContainer.setAttribute("viewBox", "-4 -4 8 8");
@@ -516,17 +524,20 @@ const setupArrowContainers = () => {
     }
 };
 
-// Custom marker for arrows
+// ================================
+//  Custom marker for arrows
+// ================================
 function setCustomMarker() {
     const svgNS = "http://www.w3.org/2000/svg";
     const svgElement = document.querySelector('.cg-shapes');
+    if (!svgElement) return;
+
     let defs = svgElement.querySelector('defs');
     if (!defs) {
-      defs = document.createElementNS(svgNS, 'defs');
-      svgElement.insertBefore(defs, svgElement.firstChild);
+        defs = document.createElementNS(svgNS, 'defs');
+        svgElement.insertBefore(defs, svgElement.firstChild);
     }
   
-    // Create a new <marker> element
     const marker = document.createElementNS(svgNS, 'marker');
     marker.setAttribute('id', 'custom');
     marker.setAttribute('orient', 'auto');
@@ -536,20 +547,19 @@ function setCustomMarker() {
     marker.setAttribute('refX', '2.05');
     marker.setAttribute('refY', '2');
   
-    // Create the <path> element for the marker shape
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', 'M.3,0 V4 L3.3,2 Z');
-    path.setAttribute('fill', arrowColor);
+    path.setAttribute('fill', DEFAULT_COLOR);
     marker.appendChild(path);
     defs.appendChild(marker);
 };
 
-// Arrow drawing
+// ================================
+//  Arrow drawing
+// ================================
 let dragStartSquare = null; 
 let isRightMouseDown = false; 
 let currentArrowGroup = null; 
-let customArrowsContainer = null;
-let currentCustomArrowContainer = null;
 let lastEndSquare = null; 
 let firstSegment = null; 
 let secondSegment = null; 
@@ -558,8 +568,6 @@ let wasKnightArrow = null;
 
 function createArrowElements(isKnight, color) {
     const svgNS = "http://www.w3.org/2000/svg";
-
-    // Clear existing lines
     if (currentArrowGroup) {
         currentArrowGroup.innerHTML = "";
     }
@@ -584,7 +592,6 @@ function createArrowElements(isKnight, color) {
         firstSegment.setAttribute("marker-end", "url(#custom)");
         firstSegment.setAttribute("stroke-linecap", 'square');
         firstSegment.setAttribute("stroke", color);
-
         currentArrowGroup.appendChild(firstSegment);
     }
 };
@@ -618,29 +625,39 @@ const setupArrowDrawing = () => {
         const currentSquare = getSquareFromEvent(event);
         if (!currentSquare) return;
     
-        // Check if the current square is the same as the starting square
+        // If user drags onto same square
         if (currentSquare.row === dragStartSquare.row && currentSquare.col === dragStartSquare.col) {
             if (currentArrowGroup) {
-                currentArrowGroup.remove(); // Remove the arrow if the end square is the same as the start square
+                currentArrowGroup.remove();
                 currentArrowGroup = null;
                 lastEndSquare = null;
             }
             return; 
         }
     
-        // If mouse moved to a new square, update or draw the arrow
-        if (!lastEndSquare || lastEndSquare.row !== currentSquare.row || lastEndSquare.col !== currentSquare.col) {
+        if (!lastEndSquare || 
+            lastEndSquare.row !== currentSquare.row || 
+            lastEndSquare.col !== currentSquare.col
+        ) {
             lastEndSquare = currentSquare;
-    
-            const rowDifference = Math.abs(dragStartSquare.row - currentSquare.row);
-            const colDifference = Math.abs(dragStartSquare.col - currentSquare.col);
-            isKnightArrow =
-                (rowDifference === 2 && colDifference === 1) ||
-                (rowDifference === 1 && colDifference === 2);
-    
-            chrome.storage.sync.get(["arrowColor"], (data) => {
+
+            chrome.storage.sync.get(["arrowColor", "knightArrowEnabled"], (data) => {
                 const color = data.arrowColor || DEFAULT_COLOR;
-    
+                // If user never set, default to true
+                const knightArrowsEnabled = (data.knightArrowEnabled === undefined) ? true : data.knightArrowEnabled;
+                // Check if it's a knight move
+                let shouldDrawKnight = false;
+                if (knightArrowsEnabled) {
+                    const rowDiff = Math.abs(dragStartSquare.row - currentSquare.row);
+                    const colDiff = Math.abs(dragStartSquare.col - currentSquare.col);
+                    shouldDrawKnight = (
+                        (rowDiff === 2 && colDiff === 1) ||
+                        (rowDiff === 1 && colDiff === 2)
+                    );
+                }
+
+                isKnightArrow = shouldDrawKnight;
+
                 if (!currentArrowGroup) {
                     const svgNS = "http://www.w3.org/2000/svg";
                     currentArrowGroup = document.createElementNS(svgNS, "g");
@@ -655,14 +672,14 @@ const setupArrowDrawing = () => {
                     createArrowElements(isKnightArrow, color);
                     wasKnightArrow = isKnightArrow;
                 }
-    
-                // Update arrow coordinates
-                const normalizeCoord = (index) => isOrientationBlack() ? 3.5 - index : index - 3.5;
+
+                // Update arrow coords
+                const normalizeCoord = (idx) => isOrientationBlack() ? 3.5 - idx : idx - 3.5;
                 const startX = normalizeCoord(dragStartSquare.col);
                 const startY = normalizeCoord(dragStartSquare.row); 
                 const endX = normalizeCoord(currentSquare.col);
                 const endY = normalizeCoord(currentSquare.row);
-    
+
                 if (isKnightArrow && firstSegment && secondSegment) {
                     let midX, midY;
                     if (Math.abs(dragStartSquare.row - currentSquare.row) === 2) {
@@ -672,24 +689,24 @@ const setupArrowDrawing = () => {
                         midX = endX;
                         midY = startY;
                     }
-    
                     firstSegment.setAttribute("x1", startX);
                     firstSegment.setAttribute("y1", startY);
                     firstSegment.setAttribute("x2", midX);
                     firstSegment.setAttribute("y2", midY);
-    
+
                     secondSegment.setAttribute("x1", midX);
                     secondSegment.setAttribute("y1", midY);
                     secondSegment.setAttribute("x2", endX);
                     secondSegment.setAttribute("y2", endY);
-    
+
                     currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
                 } else if (!isKnightArrow && firstSegment) {
+                    // Straight arrow
                     firstSegment.setAttribute("x1", startX);
                     firstSegment.setAttribute("y1", startY);
                     firstSegment.setAttribute("x2", endX);
                     firstSegment.setAttribute("y2", endY);
-    
+
                     currentArrowGroup.setAttribute('data-end', `${currentSquare.row},${currentSquare.col}`);
                 }
             });
@@ -706,19 +723,15 @@ const setupArrowDrawing = () => {
                 const end = currentArrowGroup.getAttribute('data-end');
 
                 if (start && end) {
-                    // Check if an arrow with the same start/end already exists
                     const existingArrow = customArrowsContainer.querySelector(`g[data-start="${start}"][data-end="${end}"]`);
                     if (existingArrow) {
-                        // If found, remove it (erase the arrow)
                         existingArrow.remove();
                     } else {
-                        // Otherwise, move the arrow from currentCustomArrowContainer to customArrowsContainer
                         const clone = currentArrowGroup.cloneNode(true);
                         customArrowsContainer.appendChild(clone);
                     }
                 }
 
-                // Clear current arrow
                 if (currentCustomArrowContainer) {
                     currentCustomArrowContainer.innerHTML = "";
                 }
@@ -737,21 +750,22 @@ const setupArrowDrawing = () => {
         }
     });
 
+    // Left-click clears all arrows
     document.addEventListener("click", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 
-        if (event.button === 0 && customArrowsContainer && currentCustomArrowContainer) {
-            // Left-click clears arrows
-            customArrowsContainer.innerHTML = "";
-            currentCustomArrowContainer.innerHTML = "";
+        if (event.button === 0) {
+            if (customArrowsContainer) customArrowsContainer.innerHTML = "";
+            if (currentCustomArrowContainer) currentCustomArrowContainer.innerHTML = "";
             currentArrowGroup = null;
             firstSegment = null;
             secondSegment = null;
             wasKnightArrow = null;
         }
 
-        board.querySelectorAll(".highlight-overlay").forEach((highlight) => highlight.remove());
+        // remove highlights
+        board.querySelectorAll(".highlight-overlay").forEach((hl) => hl.remove());
     });
 
     document.addEventListener("contextmenu", (event) => {
@@ -762,7 +776,9 @@ const setupArrowDrawing = () => {
     });
 };
 
-// Reset arrow container and marker on puzzle board reset
+// ================================
+//  Board observer for puzzle resets
+// ================================
 function setupBoardObserver() {
     const targetNode = document.querySelector('.puzzle.puzzle-play');
     if (!targetNode) return;
@@ -771,12 +787,10 @@ function setupBoardObserver() {
     const callback = (mutationsList) => {
         for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
-                // Check if cg-board or cg-container changed
                 const cgContainer = document.querySelector('cg-container');
                 if (cgContainer) {
                     const arrowOverlay = cgContainer.querySelector('.arrow-overlay');
                     if (!arrowOverlay) {
-                        // Re-setup arrow containers and drawing
                         setupArrowContainers();
                         setCustomMarker();
                     }
@@ -789,9 +803,17 @@ function setupBoardObserver() {
     observer.observe(targetNode, config);
 }
 
-// Apply changes in settings
+// ================================
+//  Listen for changes to settings
+// ================================
 chrome.storage.onChanged.addListener((changes) => {
-    chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
+    chrome.storage.sync.get([
+        "arrowColor", 
+        "arrowOpacity", 
+        "moveDestColor", 
+        "highlightOverlayColor", 
+        "selectedSquareColor"
+    ], (data) => {
         const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
         const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) 
             ? changes.arrowOpacity.newValue
@@ -800,19 +822,40 @@ chrome.storage.onChanged.addListener((changes) => {
         const updatedHighlightOverlayColor = (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue) || data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
         const updatedSelectedSquareColor = (changes.selectedSquareColor && changes.selectedSquareColor.newValue) || data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
-        injectDynamicCSS(updatedColor, updatedOpacity, updatedMoveDestColor, updatedHighlightOverlayColor, updatedSelectedSquareColor);
+        injectDynamicCSS(
+            updatedColor, 
+            updatedOpacity, 
+            updatedMoveDestColor, 
+            updatedHighlightOverlayColor, 
+            updatedSelectedSquareColor
+        );
     });
 });
 
-// LETS GOOOOOOOOOOOO
-chrome.storage.sync.get(["arrowColor", "arrowOpacity", "moveDestColor", "highlightOverlayColor", "selectedSquareColor"], (data) => {
+// ================================
+//  Initialize everything
+// ================================
+chrome.storage.sync.get([
+  "arrowColor", 
+  "arrowOpacity", 
+  "moveDestColor", 
+  "highlightOverlayColor", 
+  "selectedSquareColor"
+], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
     const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
     const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
-    injectDynamicCSS(savedColor, savedOpacity, savedMoveDestColor, savedHighlightOverlayColor, savedSelectedSquareColor);
+    injectDynamicCSS(
+      savedColor, 
+      savedOpacity, 
+      savedMoveDestColor, 
+      savedHighlightOverlayColor, 
+      savedSelectedSquareColor
+    );
+
     enableSquareHighlighting(); 
     setCustomMarker();
     setupArrowDrawing();

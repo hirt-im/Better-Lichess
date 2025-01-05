@@ -6,16 +6,10 @@ const DEFAULT_OPACITY = 1.0;
 const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d";
 const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150";
 const DEFAULT_SELECTED_COLOR = "#99d8ff";
-
 const DEFAULT_FREE_ARROWS = true;  // If free arrows is ON, no snapping
 const DEFAULT_SQUARE_HIGHLIGHT = true;
-
-// We'll use a 20px threshold for knight squares:
 const THRESHOLD_PX = 50; // Adjust as needed
 
-// ================================
-// Global var to track highlight on/off
-// *** NEW
 let highlightEnabledGlobal = true;
 
 // ================================
@@ -110,7 +104,7 @@ if (siteButtons) {
 
         <!-- Square Highlight Toggle -->
         <div style="display: flex; flex-direction: column; align-items: center;">
-            <label style="font: inherit; font-weight: bold;" for="squareHighlightToggle">Square Highlights</label>
+            <label style="font: inherit; font-weight: bold;" for="squareHighlightToggle">Square Highlighting</label>
             <input type="checkbox" id="squareHighlightToggle" />
         </div>
 

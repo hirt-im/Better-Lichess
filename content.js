@@ -690,10 +690,9 @@ function isWithinSquareThreshold(event, row, col, thresholdPx = THRESHOLD_PX) {
     const mouseY = event.clientY - rect.top;
     const dx = mouseX - centerX;
     const dy = mouseY - centerY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    return (Math.abs(dx) <= thresholdPx && Math.abs(dy) <= thresholdPx);
 
-    // Must be inside circle of radius thresholdPx
-    return dist < thresholdPx;
 }
 
 /**

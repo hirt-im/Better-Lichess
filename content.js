@@ -8,9 +8,15 @@ const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150";
 const DEFAULT_SELECTED_COLOR = "#99d8ff";
 
 const DEFAULT_FREE_ARROWS = true;  // If free arrows is ON, no snapping
+const DEFAULT_SQUARE_HIGHLIGHT = true;
 
 // We'll use a 20px threshold for knight squares:
 const THRESHOLD_PX = 50; // Adjust as needed
+
+// ================================
+// Global var to track highlight on/off
+// *** NEW
+let highlightEnabledGlobal = true;
 
 // ================================
 //  Extension button and menu
@@ -102,6 +108,12 @@ if (siteButtons) {
           <input type="checkbox" id="freeArrowsToggle" />
         </div>
 
+        <!-- Square Highlight Toggle -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <label style="font: inherit; font-weight: bold;" for="squareHighlightToggle">Square Highlights</label>
+            <input type="checkbox" id="squareHighlightToggle" />
+        </div>
+
       </div>
         
       <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
@@ -140,9 +152,9 @@ if (siteButtons) {
     const opacityValueDisplay = extensionMenu.querySelector('#opacityValue');
     const knightArrowToggle = extensionMenu.querySelector('#knightArrowToggle');
     const freeArrowsToggle = extensionMenu.querySelector('#freeArrowsToggle');
-
     const saveButton = extensionMenu.querySelector('#saveSettings');
     const resetButton = extensionMenu.querySelector('#resetDefaults');
+    const squareHighlightToggle = extensionMenu.querySelector('#squareHighlightToggle');
 
     // ======================================
     // RETRIEVE SETTINGS
@@ -154,7 +166,8 @@ if (siteButtons) {
         "highlightOverlayColor",
         "selectedSquareColor",
         "knightArrowEnabled",
-        "freeArrowsEnabled"
+        "freeArrowsEnabled",
+        "squareHighlightEnabled"
     ], (data) => {
         const savedColor = data.arrowColor || DEFAULT_COLOR;
         const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
@@ -174,6 +187,12 @@ if (siteButtons) {
             chrome.storage.sync.set({ freeArrowsEnabled: DEFAULT_FREE_ARROWS });
         }
 
+        let savedSquareHighlightEnabled = data.squareHighlightEnabled;
+        if (savedSquareHighlightEnabled === undefined) {
+            savedSquareHighlightEnabled = DEFAULT_SQUARE_HIGHLIGHT;
+            chrome.storage.sync.set({ squareHighlightEnabled: DEFAULT_SQUARE_HIGHLIGHT });
+        }
+
         // Update UI
         colorInput.value = savedColor;
         moveDestColorInput.value = savedMoveDestColor;
@@ -191,7 +210,11 @@ if (siteButtons) {
         }
 
         knightArrowToggle.checked = savedKnightArrowEnabled; 
-        freeArrowsToggle.checked = savedFreeArrowsEnabled; 
+        freeArrowsToggle.checked = savedFreeArrowsEnabled;
+        squareHighlightToggle.checked = savedSquareHighlightEnabled;
+
+        // *** NEW: Update our global
+        highlightEnabledGlobal = savedSquareHighlightEnabled;
     });
 
     // Show color pickers when circle is clicked
@@ -225,6 +248,7 @@ if (siteButtons) {
         const opacity = parseFloat(opacitySlider.value);
         const knightArrowsEnabled = knightArrowToggle.checked;
         const freeArrowsEnabled = freeArrowsToggle.checked;
+        const squareHighlightEnabled = squareHighlightToggle.checked;
 
         chrome.storage.sync.set({ 
             arrowColor: color, 
@@ -233,7 +257,8 @@ if (siteButtons) {
             highlightOverlayColor: highlightOverlayColor,
             selectedSquareColor: selectedSquareColor,
             knightArrowEnabled: knightArrowsEnabled,
-            freeArrowsEnabled: freeArrowsEnabled
+            freeArrowsEnabled: freeArrowsEnabled,
+            squareHighlightEnabled: squareHighlightEnabled
         });
     });
 
@@ -248,7 +273,8 @@ if (siteButtons) {
             highlightOverlayColor: DEFAULT_HIGHLIGHT_OVERLAY_COLOR,
             selectedSquareColor: DEFAULT_SELECTED_COLOR,
             knightArrowEnabled: true,
-            freeArrowsEnabled: DEFAULT_FREE_ARROWS
+            freeArrowsEnabled: DEFAULT_FREE_ARROWS,
+            squareHighlightEnabled: DEFAULT_SQUARE_HIGHLIGHT
         }, () => {
             colorInput.value = DEFAULT_COLOR;
             moveDestColorInput.value = DEFAULT_MOVE_DEST_COLOR;
@@ -267,6 +293,7 @@ if (siteButtons) {
 
             knightArrowToggle.checked = true;
             freeArrowsToggle.checked = DEFAULT_FREE_ARROWS;
+            squareHighlightToggle.checked = DEFAULT_SQUARE_HIGHLIGHT;
         });
     });
 }
@@ -391,7 +418,7 @@ function snapDirection(r1, c1, r2, c2, freeArrows) {
         // purely horizontal
         const steps = absCol; 
         finalRow = r1;
-        finalCol = r1 === r1 ? c1 + steps * signCol : c1; 
+        finalCol = c1 + steps * signCol; 
     } else if (bestDir === 90 || bestDir === -90) {
         // purely vertical
         const steps = absRow; 
@@ -420,10 +447,19 @@ const injectDynamicCSS = (
     opacity, 
     moveDestColor, 
     highlightOverlayColor, 
-    selectedSquareColor
+    selectedSquareColor,
+    squareHighlightEnabled
 ) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
+
+    const circleVisbility = squareHighlightEnabled
+    ? `
+          visibility: hidden !important;
+    `
+    : `
+
+    `;
 
     const css = `
         g line {
@@ -435,7 +471,7 @@ const injectDynamicCSS = (
         }
         .cg-shapes g circle {
             stroke: ${color} !important;
-            visibility: hidden !important;
+            ${circleVisbility}   
         }
         square.move-dest {
             background: radial-gradient(${hexToRgba(moveDestColor, 0.5)} 19%, rgba(0, 0, 0, 0) 20%) !important;
@@ -517,11 +553,18 @@ const toggleSquareHighlight = (event) => {
     }
 };
 
+// We keep the function, but don't conditionally skip it here. 
+// Instead, we do it in pointerdown/up event handlers with highlightEnabledGlobal.
+
+// *** Notice we do not pass "squareHighlightEnabled" here anymore
 const enableSquareHighlighting = () => {
     let wasRightMouseDown = false;
     let startSquareHighlight = null;
 
     document.addEventListener("pointerdown", (event) => {
+        // *** NEW: skip if toggled off
+        if (!highlightEnabledGlobal) return;
+
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
         if (event.button === 2) {
@@ -531,6 +574,9 @@ const enableSquareHighlighting = () => {
     });
 
     document.addEventListener("pointerup", (event) => {
+        // *** NEW: skip if toggled off
+        if (!highlightEnabledGlobal) return;
+
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
 
@@ -665,10 +711,6 @@ function setCustomMarker() {
 // -----------------------------------------------------------------------------
 //  EXACT PIXEL-BASED THRESHOLD FOR KNIGHT SQUARE
 // -----------------------------------------------------------------------------
-/**
- * Return true if the mouse pointer is within `thresholdPx`
- * of the *center* of (row,col) in board coordinates.
- */
 function isWithinSquareThreshold(event, row, col, thresholdPx = THRESHOLD_PX) {
     const board = document.querySelector("cg-board");
     if (!board) return false;
@@ -692,13 +734,8 @@ function isWithinSquareThreshold(event, row, col, thresholdPx = THRESHOLD_PX) {
     const dy = mouseY - centerY;
     
     return (Math.abs(dx) <= thresholdPx && Math.abs(dy) <= thresholdPx);
-
 }
 
-/**
- * If you are "deep enough" inside one of the 8 knight squares 
- * from (startRow,startCol), returns that square. Otherwise null.
- */
 function getKnightMoveSquareIfCloseEnough(event, startRow, startCol) {
     const candidates = [
         { row: startRow + 2, col: startCol + 1 },
@@ -773,6 +810,11 @@ function setupArrowDrawing() {
     document.addEventListener("pointerdown", (event) => {
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
+
+        // *** NEW: skip arrow logic if highlight is off? 
+        // Typically they are separate features. If you want them separate, do nothing here.
+        // If arrow logic is unaffected by highlight, ignore this. 
+        // (In many setups, arrow logic is separate from square highlighting.)
 
         if (event.button === 2) {
             isRightMouseDown = true;
@@ -1062,7 +1104,8 @@ chrome.storage.onChanged.addListener((changes) => {
         "arrowOpacity", 
         "moveDestColor", 
         "highlightOverlayColor", 
-        "selectedSquareColor"
+        "selectedSquareColor",
+        "squareHighlightEnabled" // *** need to also get the highlight setting
     ], (data) => {
         const updatedColor = (changes.arrowColor && changes.arrowColor.newValue)
             || data.arrowColor
@@ -1084,12 +1127,25 @@ chrome.storage.onChanged.addListener((changes) => {
             || data.selectedSquareColor
             || DEFAULT_SELECTED_COLOR;
 
+        // *** NEW: also capture updated highlightEnabled
+        let updatedSquareHighlightEnabled =
+            (changes.squareHighlightEnabled && changes.squareHighlightEnabled.newValue !== undefined)
+            ? changes.squareHighlightEnabled.newValue
+            : (data.squareHighlightEnabled !== undefined
+                ? data.squareHighlightEnabled
+                : DEFAULT_SQUARE_HIGHLIGHT);
+
+        // *** NEW: update the global
+        highlightEnabledGlobal = updatedSquareHighlightEnabled;
+
+        // Re-inject CSS
         injectDynamicCSS(
             updatedColor,
             updatedOpacity,
             updatedMoveDestColor,
             updatedHighlightOverlayColor,
-            updatedSelectedSquareColor
+            updatedSelectedSquareColor,
+            updatedSquareHighlightEnabled
         );
     });
 });
@@ -1102,23 +1158,32 @@ chrome.storage.sync.get([
   "arrowOpacity", 
   "moveDestColor", 
   "highlightOverlayColor", 
-  "selectedSquareColor"
+  "selectedSquareColor",
+  "squareHighlightEnabled"
 ], (data) => {
     const savedColor = data.arrowColor || DEFAULT_COLOR;
     const savedOpacity = (data.arrowOpacity !== undefined) ? data.arrowOpacity : DEFAULT_OPACITY;
     const savedMoveDestColor = data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
     const savedHighlightOverlayColor = data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
+    const savedSquareHighlightEnabled = (data.squareHighlightEnabled === undefined) ? DEFAULT_SQUARE_HIGHLIGHT : data.squareHighlightEnabled;
+
+    // *** NEW: store in global
+    highlightEnabledGlobal = savedSquareHighlightEnabled;
 
     injectDynamicCSS(
       savedColor,
       savedOpacity,
       savedMoveDestColor,
       savedHighlightOverlayColor,
-      savedSelectedSquareColor
+      savedSelectedSquareColor,
+      savedSquareHighlightEnabled
     );
 
+    // We now attach the event listeners only once. 
+    // The global var controls whether the logic runs on pointer events or not.
     enableSquareHighlighting();
+
     setCustomMarker();
     setupArrowDrawing();
     setupBoardObserver();

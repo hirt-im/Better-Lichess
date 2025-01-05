@@ -10,7 +10,7 @@ const DEFAULT_SELECTED_COLOR = "#99d8ff";
 const DEFAULT_FREE_ARROWS = true;  // If free arrows is ON, no snapping
 
 // We'll use a 20px threshold for knight squares:
-const THRESHOLD_PX = 40; // Adjust as needed
+const THRESHOLD_PX = 50; // Adjust as needed
 
 // ================================
 //  Extension button and menu

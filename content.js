@@ -3,11 +3,14 @@
 // ================================
 const DEFAULT_COLOR = "#f2c218";
 const DEFAULT_OPACITY = 1.0;
-const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d"; 
-const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150"; 
+const DEFAULT_MOVE_DEST_COLOR = "#4d4d4d";
+const DEFAULT_HIGHLIGHT_OVERLAY_COLOR = "#eb6150";
 const DEFAULT_SELECTED_COLOR = "#99d8ff";
 
 const DEFAULT_FREE_ARROWS = true;  // If free arrows is ON, no snapping
+
+// We'll use a 20px threshold for knight squares:
+const THRESHOLD_PX = 40; // Adjust as needed
 
 // ================================
 //  Extension button and menu
@@ -276,6 +279,10 @@ const isOrientationBlack = () => {
     return boardContainer?.classList.contains("orientation-black");
 };
 
+/**
+ * Converts the mouse event into a (row, col) index, ignoring threshold,
+ * plus minor clamp (0..7).
+ */
 const getSquareFromEvent = (event) => {
     const board = document.querySelector("cg-board");
     if (!board) return null;
@@ -287,6 +294,10 @@ const getSquareFromEvent = (event) => {
     let col = Math.floor(x / squareSize);
     let row = Math.floor(y / squareSize);
 
+    // Basic clamp here, so we never exceed the board
+    col = Math.max(0, Math.min(7, col));
+    row = Math.max(0, Math.min(7, row));
+
     if (isOrientationBlack()) {
         row = 7 - row;
         col = 7 - col;
@@ -294,6 +305,9 @@ const getSquareFromEvent = (event) => {
     return { row, col };
 };
 
+/**
+ * Returns a CSS rgba color string from a hex color + alpha
+ */
 const hexToRgba = (hex, alpha = 1) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -301,7 +315,9 @@ const hexToRgba = (hex, alpha = 1) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Are we exactly a knight's move?
+/**
+ * Returns true if (r2,c2) is an EXACT knight move from (r1,c1).
+ */
 function isKnightMove(r1, c1, r2, c2) {
     const rowDiff = Math.abs(r1 - r2);
     const colDiff = Math.abs(c1 - c2);
@@ -311,106 +327,101 @@ function isKnightMove(r1, c1, r2, c2) {
     );
 }
 
+// -------------------------------------------------------
+// CLAMP HELPER
+// -------------------------------------------------------
+function clampCoord(value) {
+    return Math.max(0, Math.min(7, value));
+}
+
 /**
- * If freeArrows is ON → always allowed.
- * If freeArrows is OFF, we do these steps:
- *   1) Check if EXACT knight move → allowed
- *   2) If not knight, we compute the angle from (0,0) to (colDiff, rowDiff).
- *   3) We snap that angle to the nearest 0°, 90°, 180°, or ±45°, ±135°, etc. (8 directions).
- *   4) The resulting snapped direction we convert into squares.
- *   5) Return that snapped square. If it’s the same as the start, it’s invalid.
+ * If freeArrows is ON => no snapping (but still clamp).
+ * If freeArrows is OFF => 
+ *   1) Check which of 8 directions is closest in angle.
+ *   2) For the chosen direction, compute a discrete step count so
+ *      we only go to a "true" horizontal/vertical/diagonal square.
+ *   3) Finally clamp row/col to [0..7].
  */
 function snapDirection(r1, c1, r2, c2, freeArrows) {
     if (freeArrows) {
-        return { row: r2, col: c2 }; // no snapping
+        // STILL clamp final row/col in freeArrows mode:
+        return {
+            row: clampCoord(r2),
+            col: clampCoord(c2)
+        };
     }
 
     const rowDiff = r2 - r1;
     const colDiff = c2 - c1;
 
-    // Knight moves override angle snapping
-    if (isKnightMove(r1, c1, r2, c2)) {
-        return { row: r2, col: c2 };
-    }
-
-    // If rowDiff=0 & colDiff=0 we skip it → invalid anyway
+    // If same square => no move
     if (rowDiff === 0 && colDiff === 0) {
-        return { row: r2, col: c2 }; 
+        return { row: r1, col: c1 };
     }
 
-    // Compute angle in degrees [-180..180]
-    const angleRad = Math.atan2(rowDiff, colDiff); // y= rowDiff, x= colDiff
+    // We'll measure angle from the horizontal axis
+    const angleRad = Math.atan2(rowDiff, colDiff);
     let angleDeg = angleRad * (180 / Math.PI);
 
-    // We have 8 directions: -180°, -135°, -90°, -45°, 0°, 45°, 90°, 135° (then 180 is same as -180)
-    // We'll define an array of "targets" in degrees:
-    const directions = [ -180, -135, -90, -45, 0, 45, 90, 135 ];
-    // We'll find which one is closest
+    // 8 directions: -180, -135, -90, -45, 0, 45, 90, 135
+    const directions = [-180, -135, -90, -45, 0, 45, 90, 135];
     let bestDir = 0;
     let bestDist = 999999;
     for (const d of directions) {
-        // difference in angle
         let diff = Math.abs(angleDeg - d);
-        // handle wraparound near ±180
-        if (diff > 180) diff = 360 - diff;
+        if (diff > 180) diff = 360 - diff; // e.g. -179 vs 179
         if (diff < bestDist) {
             bestDist = diff;
             bestDir = d;
         }
     }
 
-    // Now we have a snapped direction (bestDir)
-    // We'll define the final square by using whichever is horizontal, vertical, diagonal
-    // so row=0 col=? or row=? col=0 or row=± col=±
-    // We'll keep the same magnitude in squares
-    const distance = Math.sqrt(rowDiff*rowDiff + colDiff*colDiff);
-    // integer or partial squares? We'll keep the integer rowDiff, colDiff magnitude
-    // but we only allow exact squares. We do a quick approach:
-    //  - If bestDir = 0 => row=0, col= colDiff in sign
-    //  - If bestDir = ±90 => col=0, row= rowDiff in sign
-    //  - If bestDir = ±45, ±135 => abs(row)= abs(col)
-    // Let final row/col = ???
+    // We'll decide step size based on the direction
+    const absRow = Math.abs(rowDiff);
+    const absCol = Math.abs(colDiff);
+
+    // The sign for row & col
+    const signRow = rowDiff >= 0 ? 1 : -1;
+    const signCol = colDiff >= 0 ? 1 : -1;
 
     let finalRow = r1;
     let finalCol = c1;
 
-    // define the sign for row/col
-    const signRow = (rowDiff >= 0) ? 1 : -1;
-    const signCol = (colDiff >= 0) ? 1 : -1;
-    const steps = Math.round(distance); // how many squares from start (approx)
-
-    // We'll create a little helper for diagonal:
-    function toDiagonal() {
-        // whichever is bigger rowDiff or colDiff in magnitude => that is steps
-        let big = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
-        return {
-            row: r1 + signRow * big,
-            col: c1 + signCol * big
-        };
-    }
-
     if (bestDir === 0 || bestDir === 180 || bestDir === -180) {
         // purely horizontal
-        finalRow = r1; 
-        // keep the same "steps" horizontally
-        finalCol = c1 + signCol * steps;
+        const steps = absCol; 
+        finalRow = r1;
+        finalCol = r1 === r1 ? c1 + steps * signCol : c1; 
     } else if (bestDir === 90 || bestDir === -90) {
         // purely vertical
+        const steps = absRow; 
+        finalRow = r1 + steps * signRow;
         finalCol = c1;
-        finalRow = r1 + signRow * steps;
     } else {
-        // diagonal angles => 45°, -45°, 135°, -135°
-        const diag = toDiagonal();
-        finalRow = diag.row;
-        finalCol = diag.col;
+        // "true diagonal": ±45°, ±135°
+        // step = min(row distance, col distance)
+        const steps = Math.min(absRow, absCol);
+        finalRow = r1 + steps * signRow;
+        finalCol = c1 + steps * signCol;
     }
+
+    // clamp so we never go off-board
+    finalRow = clampCoord(finalRow);
+    finalCol = clampCoord(finalCol);
+
     return { row: finalRow, col: finalCol };
 }
 
 // ================================
 //  Inject dynamic CSS
 // ================================
-const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, selectedSquareColor) => {
+const injectDynamicCSS = (
+    color, 
+    opacity, 
+    moveDestColor, 
+    highlightOverlayColor, 
+    selectedSquareColor
+) => {
     const existingStyle = document.getElementById("dynamicArrowStyles");
     if (existingStyle) existingStyle.remove();
 
@@ -439,7 +450,7 @@ const injectDynamicCSS = (color, opacity, moveDestColor, highlightOverlayColor, 
             border: none;
             background-color: ${highlightOverlayColor};
             opacity: 0.8;
-            pointer-events: none; 
+            pointer-events: none;
             position: absolute;
             z-index: 1;
         }
@@ -560,7 +571,7 @@ const setupArrowContainers = () => {
         arrowOverlay.style.width = '100%';
         arrowOverlay.style.height = '100%';
         arrowOverlay.style.pointerEvents = 'none';
-        arrowOverlay.style.zIndex = '9999'; 
+        arrowOverlay.style.zIndex = '9999';
         cgContainer.appendChild(arrowOverlay);
     }
 
@@ -651,8 +662,70 @@ function setCustomMarker() {
     defs.appendChild(marker);
 };
 
+// -----------------------------------------------------------------------------
+//  EXACT PIXEL-BASED THRESHOLD FOR KNIGHT SQUARE
+// -----------------------------------------------------------------------------
+/**
+ * Return true if the mouse pointer is within `thresholdPx`
+ * of the *center* of (row,col) in board coordinates.
+ */
+function isWithinSquareThreshold(event, row, col, thresholdPx = THRESHOLD_PX) {
+    const board = document.querySelector("cg-board");
+    if (!board) return false;
+
+    const rect = board.getBoundingClientRect();
+    const squareSize = rect.width / 8;
+
+    // center of (row,col)
+    let centerX = col * squareSize + squareSize / 2;
+    let centerY = row * squareSize + squareSize / 2;
+
+    // flip if black orientation
+    if (isOrientationBlack()) {
+        centerX = (7 - col) * squareSize + squareSize / 2;
+        centerY = (7 - row) * squareSize + squareSize / 2;
+    }
+
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    const dx = mouseX - centerX;
+    const dy = mouseY - centerY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    // Must be inside circle of radius thresholdPx
+    return dist < thresholdPx;
+}
+
+/**
+ * If you are "deep enough" inside one of the 8 knight squares 
+ * from (startRow,startCol), returns that square. Otherwise null.
+ */
+function getKnightMoveSquareIfCloseEnough(event, startRow, startCol) {
+    const candidates = [
+        { row: startRow + 2, col: startCol + 1 },
+        { row: startRow + 2, col: startCol - 1 },
+        { row: startRow - 2, col: startCol + 1 },
+        { row: startRow - 2, col: startCol - 1 },
+        { row: startRow + 1, col: startCol + 2 },
+        { row: startRow + 1, col: startCol - 2 },
+        { row: startRow - 1, col: startCol + 2 },
+        { row: startRow - 1, col: startCol - 2 },
+    ];
+
+    const onBoard = candidates.filter(
+        sq => sq.row >= 0 && sq.row < 8 && sq.col >= 0 && sq.col < 8
+    );
+
+    for (const knightSq of onBoard) {
+        if (isWithinSquareThreshold(event, knightSq.row, knightSq.col, THRESHOLD_PX)) {
+            return knightSq;
+        }
+    }
+    return null;
+}
+
 // ================================
-//  Arrow drawing
+//  Arrow drawing logic
 // ================================
 let dragStartSquare = null; 
 let isRightMouseDown = false; 
@@ -689,20 +762,10 @@ function createArrowElements(isKnight, color) {
         firstSegment = document.createElementNS(svgNS, "line");
         firstSegment.setAttribute("stroke-width", 0.165);
         firstSegment.setAttribute("marker-end", "url(#custom)");
-        firstSegment.setAttribute("stroke-linecap", 'square');
+        firstSegment.setAttribute("stroke-linecap", "square");
         firstSegment.setAttribute("stroke", color);
         currentArrowGroup.appendChild(firstSegment);
     }
-}
-
-// Tells us if it's a knight move
-function isKnightMove(r1, c1, r2, c2) {
-    const rowDiff = Math.abs(r1 - r2);
-    const colDiff = Math.abs(c1 - c2);
-    return (
-        (rowDiff === 2 && colDiff === 1) ||
-        (rowDiff === 1 && colDiff === 2)
-    );
 }
 
 function setupArrowDrawing() {
@@ -730,9 +793,24 @@ function setupArrowDrawing() {
         if (!isRightMouseDown || !dragStartSquare) return;
         const board = document.querySelector("cg-board");
         if (!board || !board.contains(event.target)) return;
-    
-        const pointerSquare = getSquareFromEvent(event);
-        if (!pointerSquare) return;
+
+        // 1) Check if we're "deep enough" inside a knight square
+        const maybeKnightSquare = getKnightMoveSquareIfCloseEnough(
+            event,
+            dragStartSquare.row,
+            dragStartSquare.col
+        );
+
+        let pointerSquare;
+        if (maybeKnightSquare) {
+            // If we found a knight square by threshold => forcibly use it
+            pointerSquare = maybeKnightSquare;
+        } else {
+            // Otherwise, fallback to normal getSquareFromEvent
+            const rawSq = getSquareFromEvent(event);
+            if (!rawSq) return;
+            pointerSquare = rawSq;
+        }
 
         // If user drags onto the same square
         if (
@@ -748,121 +826,134 @@ function setupArrowDrawing() {
         }
 
         chrome.storage.sync.get(
-          ["arrowColor", "knightArrowEnabled", "freeArrowsEnabled"],
-          (data) => {
-            const color = data.arrowColor || DEFAULT_COLOR;
-            const knightArrowsEnabled = (data.knightArrowEnabled === undefined) ? true : data.knightArrowEnabled;
-            const freeArrowsEnabled = (data.freeArrowsEnabled === undefined) ? true : data.freeArrowsEnabled;
+            ["arrowColor", "knightArrowEnabled", "freeArrowsEnabled"],
+            (data) => {
+                const color = data.arrowColor || DEFAULT_COLOR;
+                const knightArrowsEnabled = (data.knightArrowEnabled === undefined)
+                    ? true
+                    : data.knightArrowEnabled;
+                const freeArrowsEnabled = (data.freeArrowsEnabled === undefined)
+                    ? true
+                    : data.freeArrowsEnabled;
 
-            // Snap the pointer to whichever direction is closest 
-            // ... unless it's exactly a knight move
-            const snapped = snapDirection(
-              dragStartSquare.row, 
-              dragStartSquare.col,
-              pointerSquare.row,
-              pointerSquare.col,
-              freeArrowsEnabled
-            );
+                let snapped;
+                if (maybeKnightSquare) {
+                    // If threshold triggered a knight square, skip angle snapping
+                    snapped = { row: pointerSquare.row, col: pointerSquare.col };
+                } else {
+                    snapped = snapDirection(
+                        dragStartSquare.row,
+                        dragStartSquare.col,
+                        pointerSquare.row,
+                        pointerSquare.col,
+                        freeArrowsEnabled
+                    );
+                }
 
-            // If the snapped square is the same as start => invalid
-            if (
-                snapped.row === dragStartSquare.row &&
-                snapped.col === dragStartSquare.col
-            ) {
-                // Not valid
-                if (!lastValidSquare) {
-                    if (currentArrowGroup) {
+                // If the snapped square is the same as start => invalid
+                if (
+                    snapped.row === dragStartSquare.row &&
+                    snapped.col === dragStartSquare.col
+                ) {
+                    if (!lastValidSquare && currentArrowGroup) {
                         currentArrowGroup.remove();
                         currentArrowGroup = null;
                     }
+                    return;
                 }
-                return;
-            }
 
-            // Mark that we can point to this "snapped" square
-            const newSquare = { row: snapped.row, col: snapped.col };
+                const newSquare = { row: snapped.row, col: snapped.col };
 
-            // If it's the same as last valid, no big changes
-            if (
-                lastValidSquare &&
-                lastValidSquare.row === newSquare.row &&
-                lastValidSquare.col === newSquare.col
-            ) {
-                // no update needed
-                return;
-            }
+                // If it's the same as last valid, do nothing
+                if (
+                    lastValidSquare &&
+                    lastValidSquare.row === newSquare.row &&
+                    lastValidSquare.col === newSquare.col
+                ) {
+                    return;
+                }
+                lastValidSquare = newSquare;
 
-            lastValidSquare = newSquare;
+                // Decide if it is actually a knight arrow or single line
+                const actuallyKnight = isKnightMove(
+                    dragStartSquare.row,
+                    dragStartSquare.col,
+                    newSquare.row,
+                    newSquare.col
+                );
+                const shouldDrawKnight = knightArrowsEnabled && actuallyKnight;
 
-            // Check if it's actually a knight move 
-            const actuallyKnight = isKnightMove(
-              dragStartSquare.row,
-              dragStartSquare.col,
-              newSquare.row,
-              newSquare.col
-            );
-            // If user wants knight arrows & it's a knight move → L shape
-            // Else single line
-            const shouldDrawKnight = (knightArrowsEnabled && actuallyKnight);
+                // Create arrow group if needed
+                if (!currentArrowGroup) {
+                    const svgNS = "http://www.w3.org/2000/svg";
+                    currentArrowGroup = document.createElementNS(svgNS, "g");
+                    currentArrowGroup.classList.add(
+                        shouldDrawKnight ? "knight-arrow" : "straight-arrow"
+                    );
+                    currentArrowGroup.setAttribute(
+                        "data-start",
+                        `${dragStartSquare.row},${dragStartSquare.col}`
+                    );
+                    currentCustomArrowContainer.appendChild(currentArrowGroup);
+                    createArrowElements(shouldDrawKnight, color);
+                    wasKnightArrow = shouldDrawKnight;
+                } 
+                else if (wasKnightArrow !== shouldDrawKnight) {
+                    currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
+                    currentArrowGroup.classList.add(
+                        shouldDrawKnight ? "knight-arrow" : "straight-arrow"
+                    );
+                    createArrowElements(shouldDrawKnight, color);
+                    wasKnightArrow = shouldDrawKnight;
+                }
 
-            // Make arrow group if needed
-            if (!currentArrowGroup) {
-                const svgNS = "http://www.w3.org/2000/svg";
-                currentArrowGroup = document.createElementNS(svgNS, "g");
-                currentArrowGroup.classList.add(shouldDrawKnight ? "knight-arrow" : "straight-arrow");
-                currentArrowGroup.setAttribute('data-start', `${dragStartSquare.row},${dragStartSquare.col}`);
-                currentCustomArrowContainer.appendChild(currentArrowGroup);
-                createArrowElements(shouldDrawKnight, color);
-                wasKnightArrow = shouldDrawKnight;
-            } else if (wasKnightArrow !== shouldDrawKnight) {
-                currentArrowGroup.classList.remove("knight-arrow", "straight-arrow");
-                currentArrowGroup.classList.add(shouldDrawKnight ? "knight-arrow" : "straight-arrow");
-                createArrowElements(shouldDrawKnight, color);
-                wasKnightArrow = shouldDrawKnight;
-            }
+                // Now set line coordinates in the SVG
+                const normalizeCoord = (idx) =>
+                    isOrientationBlack() ? 3.5 - idx : idx - 3.5;
+                const startX = normalizeCoord(dragStartSquare.col);
+                const startY = normalizeCoord(dragStartSquare.row);
+                const endX = normalizeCoord(newSquare.col);
+                const endY = normalizeCoord(newSquare.row);
 
-            // Now set line coordinates
-            const normalizeCoord = (idx) => isOrientationBlack() ? 3.5 - idx : idx - 3.5;
-            const startX = normalizeCoord(dragStartSquare.col);
-            const startY = normalizeCoord(dragStartSquare.row);
-            const endX = normalizeCoord(newSquare.col);
-            const endY = normalizeCoord(newSquare.row);
+                if (shouldDrawKnight && firstSegment && secondSegment) {
+                    // L-shape with two segments
+                    if (Math.abs(dragStartSquare.row - newSquare.row) === 2) {
+                        // vertical 2, horizontal 1
+                        firstSegment.setAttribute("x1", startX);
+                        firstSegment.setAttribute("y1", startY);
+                        firstSegment.setAttribute("x2", startX);
+                        firstSegment.setAttribute("y2", endY);
 
-            if (shouldDrawKnight && firstSegment && secondSegment) {
-                // L-shape with two segments
-                if (Math.abs(dragStartSquare.row - newSquare.row) === 2) {
-                    // vertical 2, horizontal 1
-                    firstSegment.setAttribute("x1", startX);
-                    firstSegment.setAttribute("y1", startY);
-                    firstSegment.setAttribute("x2", startX);
-                    firstSegment.setAttribute("y2", endY);
+                        secondSegment.setAttribute("x1", startX);
+                        secondSegment.setAttribute("y1", endY);
+                        secondSegment.setAttribute("x2", endX);
+                        secondSegment.setAttribute("y2", endY);
+                    } else {
+                        // horizontal 2, vertical 1
+                        firstSegment.setAttribute("x1", startX);
+                        firstSegment.setAttribute("y1", startY);
+                        firstSegment.setAttribute("x2", endX);
+                        firstSegment.setAttribute("y2", startY);
 
-                    secondSegment.setAttribute("x1", startX);
-                    secondSegment.setAttribute("y1", endY);
-                    secondSegment.setAttribute("x2", endX);
-                    secondSegment.setAttribute("y2", endY);
-                } else {
-                    // horizontal 2, vertical 1
+                        secondSegment.setAttribute("x1", endX);
+                        secondSegment.setAttribute("y1", startY);
+                        secondSegment.setAttribute("x2", endX);
+                        secondSegment.setAttribute("y2", endY);
+                    }
+                } 
+                else if (!shouldDrawKnight && firstSegment) {
+                    // Single line
                     firstSegment.setAttribute("x1", startX);
                     firstSegment.setAttribute("y1", startY);
                     firstSegment.setAttribute("x2", endX);
-                    firstSegment.setAttribute("y2", startY);
-
-                    secondSegment.setAttribute("x1", endX);
-                    secondSegment.setAttribute("y1", startY);
-                    secondSegment.setAttribute("x2", endX);
-                    secondSegment.setAttribute("y2", endY);
+                    firstSegment.setAttribute("y2", endY);
                 }
-            } else if (!shouldDrawKnight && firstSegment) {
-                // Single line
-                firstSegment.setAttribute("x1", startX);
-                firstSegment.setAttribute("y1", startY);
-                firstSegment.setAttribute("x2", endX);
-                firstSegment.setAttribute("y2", endY);
-            }
 
-            currentArrowGroup.setAttribute('data-end', `${newSquare.row},${newSquare.col}`);
-          }
+                currentArrowGroup.setAttribute(
+                    "data-end",
+                    `${newSquare.row},${newSquare.col}`
+                );
+            }
         );
     });
 
@@ -877,10 +968,13 @@ function setupArrowDrawing() {
 
                 if (start && end) {
                     // If an arrow with same start/end is found, remove it
-                    const existingArrow = customArrowsContainer.querySelector(`g[data-start="${start}"][data-end="${end}"]`);
+                    const existingArrow = customArrowsContainer.querySelector(
+                        `g[data-start="${start}"][data-end="${end}"]`
+                    );
                     if (existingArrow) {
                         existingArrow.remove();
                     } else {
+                        // Otherwise clone the in-progress arrow into permanent container
                         const clone = currentArrowGroup.cloneNode(true);
                         customArrowsContainer.appendChild(clone);
                     }
@@ -924,6 +1018,7 @@ function setupArrowDrawing() {
         board.querySelectorAll(".highlight-overlay").forEach((hl) => hl.remove());
     });
 
+    // Prevent the browser's context menu on right-click
     document.addEventListener("contextmenu", (event) => {
         const board = document.querySelector("cg-board");
         if (board && board.contains(event.target)) {
@@ -970,19 +1065,31 @@ chrome.storage.onChanged.addListener((changes) => {
         "highlightOverlayColor", 
         "selectedSquareColor"
     ], (data) => {
-        const updatedColor = (changes.arrowColor && changes.arrowColor.newValue) || data.arrowColor || DEFAULT_COLOR;
-        const updatedOpacity = (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined) 
+        const updatedColor = (changes.arrowColor && changes.arrowColor.newValue)
+            || data.arrowColor
+            || DEFAULT_COLOR;
+        const updatedOpacity =
+            (changes.arrowOpacity && changes.arrowOpacity.newValue !== undefined)
             ? changes.arrowOpacity.newValue
             : (data.arrowOpacity !== undefined ? data.arrowOpacity : DEFAULT_OPACITY);
-        const updatedMoveDestColor = (changes.moveDestColor && changes.moveDestColor.newValue) || data.moveDestColor || DEFAULT_MOVE_DEST_COLOR;
-        const updatedHighlightOverlayColor = (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue) || data.highlightOverlayColor || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
-        const updatedSelectedSquareColor = (changes.selectedSquareColor && changes.selectedSquareColor.newValue) || data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
+        const updatedMoveDestColor =
+            (changes.moveDestColor && changes.moveDestColor.newValue)
+            || data.moveDestColor
+            || DEFAULT_MOVE_DEST_COLOR;
+        const updatedHighlightOverlayColor =
+            (changes.highlightOverlayColor && changes.highlightOverlayColor.newValue)
+            || data.highlightOverlayColor
+            || DEFAULT_HIGHLIGHT_OVERLAY_COLOR;
+        const updatedSelectedSquareColor =
+            (changes.selectedSquareColor && changes.selectedSquareColor.newValue)
+            || data.selectedSquareColor
+            || DEFAULT_SELECTED_COLOR;
 
         injectDynamicCSS(
-            updatedColor, 
-            updatedOpacity, 
-            updatedMoveDestColor, 
-            updatedHighlightOverlayColor, 
+            updatedColor,
+            updatedOpacity,
+            updatedMoveDestColor,
+            updatedHighlightOverlayColor,
             updatedSelectedSquareColor
         );
     });
@@ -1005,14 +1112,14 @@ chrome.storage.sync.get([
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
 
     injectDynamicCSS(
-      savedColor, 
-      savedOpacity, 
-      savedMoveDestColor, 
-      savedHighlightOverlayColor, 
+      savedColor,
+      savedOpacity,
+      savedMoveDestColor,
+      savedHighlightOverlayColor,
       savedSelectedSquareColor
     );
 
-    enableSquareHighlighting(); 
+    enableSquareHighlighting();
     setCustomMarker();
     setupArrowDrawing();
     setupBoardObserver();

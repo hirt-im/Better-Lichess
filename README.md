@@ -1,19 +1,10 @@
 # Better Lichess
+[Chrome Web Store](https://chromewebstore.google.com/detail/better-lichess/jdmobaocgpgpgfgjhcpifjbgbpjbndca)
+
+
 Chrome extension that improves Lichess by adding knight jump arrows, better square highlighting, and color customization.
 
 ![image](https://github.com/user-attachments/assets/e0952688-bf49-485f-a993-a1c911dde7e9)
-
-
-## Installation
-1. Download the repository as a ZIP file and extract it.
-
-2. Go to chrome://extensions/
-
-3. Enable Developer mode.
-
-4. Click Load unpacked.
-
-5. Select the folder containing the extracted files.
 
 ## Customization
 

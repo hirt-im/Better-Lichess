@@ -1162,7 +1162,6 @@ chrome.storage.sync.get([
     const savedSelectedSquareColor = data.selectedSquareColor || DEFAULT_SELECTED_COLOR;
     const savedSquareHighlightEnabled = (data.squareHighlightEnabled === undefined) ? DEFAULT_SQUARE_HIGHLIGHT : data.squareHighlightEnabled;
 
-    // *** NEW: store in global
     highlightEnabledGlobal = savedSquareHighlightEnabled;
 
     injectDynamicCSS(
@@ -1174,10 +1173,7 @@ chrome.storage.sync.get([
       savedSquareHighlightEnabled
     );
 
-    // We now attach the event listeners only once. 
-    // The global var controls whether the logic runs on pointer events or not.
     enableSquareHighlighting();
-
     setCustomMarker();
     setupArrowDrawing();
     setupBoardObserver();
